@@ -29,6 +29,10 @@ INDUSTRIAL_PALLET_LIMIT_MIN = 70  # boxes
 EURO_LIMIT_CHANGE_FROM = 10  # pallets
 INDUSTRIAL_LIMIT_CHANGE_FROM = 14  # pallets
 
+# This keeps track of whether all pallets going to Poland has to be EURO or not
+POLAND_ALL_EURO = True
+POLAND_LOGISTICS = ['UPS Polska', 'Good Speed',
+                    'good Speed_bancali', 'Nagel Polska']
 
 if __name__ == '__main__':
     pass
