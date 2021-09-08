@@ -39,10 +39,22 @@ class MainPage(QMainWindow):
         self._add_wids()
 
         self._set_initial_state()
+        self._connect_signals_slots()
+
+        self.google_sheet_link = None
 
     def _connect_signals_slots(self):
         """ Connects widgets with their respective functions """
-        pass
+        self.g_sheet_link.textChanged.connect(self._link_label_responder)
+
+    def _link_label_responder(self):
+        """ Keeps track of when user enter or does not enter a link
+        in the line edit widget labeled 'Link' """
+        if self.g_sheet_link.text():
+            self.to_do_combo.setEnabled(True)
+            self.google_sheet_link = self.g_sheet_link.text()
+        else:
+            self.to_do_combo.setEnabled(False)
 
     def _set_initial_state(self):
         """ Sets the initial state of the GUI by enabling some widgets. """
