@@ -22,14 +22,6 @@ def determine_max_per_pallet(pallet_name: str, tot_pallet: int, total_boxes_orde
                 tot_pallet=tot_pallet, max_capacity=settings.EURO_PALLET_MAX,
                 min_capacity=settings.EURO_PALLET_MIN
             )
-            if max_per_pallet == settings.EURO_PALLET_MAX:
-                return tot_pallet, max_per_pallet
-            elif total_boxes_ordered % max_per_pallet == 0:
-                final_tot_pallet = int(total_boxes_ordered / max_per_pallet)
-                return final_tot_pallet, max_per_pallet
-            else:
-                final_tot_pallet = total_boxes_ordered // max_per_pallet + 1
-                return final_tot_pallet, max_per_pallet
 
         else:
             max_per_pallet = helper_functions.get_pallet_limit(
@@ -38,14 +30,15 @@ def determine_max_per_pallet(pallet_name: str, tot_pallet: int, total_boxes_orde
                 max_capacity=settings.INDUSTRIAL_PALLET_LIMIT_MAX,
                 tot_pallet=tot_pallet
             )
-            if max_per_pallet == settings.INDUSTRIAL_PALLET_LIMIT_MAX:
-                return tot_pallet, max_per_pallet
-            elif total_boxes_ordered % max_per_pallet == 0:
-                final_tot_pallet = int(total_boxes_ordered / max_per_pallet)
-                return final_tot_pallet, max_per_pallet
-            else:
-                final_tot_pallet = total_boxes_ordered // max_per_pallet + 1
-                return final_tot_pallet, max_per_pallet
+        if max_per_pallet == settings.INDUSTRIAL_PALLET_LIMIT_MAX \
+                or max_per_pallet == settings.EURO_PALLET_MAX:
+            return tot_pallet, max_per_pallet
+        elif total_boxes_ordered % max_per_pallet == 0:
+            final_tot_pallet = int(total_boxes_ordered / max_per_pallet)
+            return final_tot_pallet, max_per_pallet
+        else:
+            final_tot_pallet = total_boxes_ordered // max_per_pallet + 1
+            return final_tot_pallet, max_per_pallet
 
 
 class DatabaseCommunicator:
@@ -233,7 +226,4 @@ class DatabaseCommunicator:
 
 
 if __name__ == '__main__':
-    reader = DatabaseCommunicator(read_from_db=True)
-    print(reader.get_pallet_info_pl(
-        total_boxes=630
-    ))
+    pass
