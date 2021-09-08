@@ -30,6 +30,23 @@ class DatabaseCommunicator:
         self.con_error = False
         self.connection = None
 
+    def create_client_info_table(self):
+        """ Creates the table where information related to clients is
+        stored. """
+
+        if not self.connection:
+            self.create_connection()
+
+        client_query = QSqlQuery(self.connection)
+
+        query = (
+            f""" CREATE TABLE IF NOT EXISTS {self.client_table_name} (
+            Client_Name VARCHAR,
+            Client_Logistic VARCHAR
+            )"""
+        )
+        client_query.exec_(query)
+
     def create_pallet_table(self):
         """ Creates the table where information related to pallets
         is stored. """
@@ -59,4 +76,4 @@ class DatabaseCommunicator:
 
 
 if __name__ == '__main__':
-    pass
+    DatabaseCommunicator(write_to_db=True).create_client_info_table()
