@@ -30,6 +30,35 @@ class DatabaseCommunicator:
         self.con_error = False
         self.connection = None
 
+    def write_to_pallet_table(self, info_to_write: list):
+        """ Writes the necessary information passed into info_to_write parameter
+        into pallet_table in the database used in this project.
+        """
+        if len(info_to_write) == settings.MAX_PALLET_INFO:
+            self.create_pallet_table()
+            if not self.connection:
+                self.create_connection()
+            pallet_writer_query = QSqlQuery(self.connection)
+            query = (
+                f"""INSERT INTO {self.pallet_table_name} (
+                Min_Value,
+                Max_Value,
+                Euro,
+                Industrial,
+                Alternative_Euro)
+                VALUES (?, ?, ?, ?, ?)"""
+            )
+            if pallet_writer_query.prepare(query):
+                pallet_writer_query.addBindValue(info_to_write[0])
+                pallet_writer_query.addBindValue(info_to_write[1])
+                pallet_writer_query.addBindValue(info_to_write[2])
+                pallet_writer_query.addBindValue(info_to_write[3])
+                pallet_writer_query.addBindValue(info_to_write[4])
+
+                pallet_writer_query.exec_()
+            else:
+                print('Query exec failed')
+
     def create_client_info_table(self):
         """ Creates the table where information related to clients is
         stored. """
@@ -76,4 +105,7 @@ class DatabaseCommunicator:
 
 
 if __name__ == '__main__':
-    DatabaseCommunicator(write_to_db=True).create_client_info_table()
+    info = [1, 2, 3, 4, 5]
+    DatabaseCommunicator(write_to_db=True).write_to_pallet_table(
+        info
+    )
