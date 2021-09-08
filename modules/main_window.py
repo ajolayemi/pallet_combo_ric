@@ -38,6 +38,18 @@ class MainPage(QMainWindow):
 
         self._add_wids()
 
+        self._set_initial_state()
+
+    def _connect_signals_slots(self):
+        """ Connects widgets with their respective functions """
+        pass
+
+    def _set_initial_state(self):
+        """ Sets the initial state of the GUI by enabling some widgets. """
+        self.close_app_btn.setEnabled(False)
+        self.combine_pallet_btn.setEnabled(False)
+        self.to_do_combo.setEnabled(False)
+
     def _add_wids(self):
         username = helper_functions.get_user_name()
         self.greetings_lbl = QLabel(f'<h1> Ciao {username}.</h1>')
