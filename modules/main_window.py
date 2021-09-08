@@ -95,15 +95,18 @@ class MainPage(QMainWindow):
         self.to_do_combo_lbl.setFont(QFont('Italics', 16))
         self.to_do_combo.setFont(MSG_FONT)
 
+        self.update_db_btn = QPushButton('Aggiornare DB')
+        self.update_db_btn.setFont(BUTTONS_FONT)
+        self.update_db_btn.setStyleSheet('color: blue')
+
         self.combine_pallet_btn = QPushButton('Comporre Pedane')
         self.combine_pallet_btn.setFont(BUTTONS_FONT)
-        self.combine_pallet_btn.setStyleSheet('color: blue')
 
         self.close_app_btn = QPushButton('Chiudi')
         self.close_app_btn.setFont(BUTTONS_FONT)
         self.close_app_btn.setStyleSheet('color: red')
 
-        buttons_list = [self.combine_pallet_btn, self.close_app_btn]
+        buttons_list = [self.update_db_btn, self.combine_pallet_btn, self.close_app_btn]
 
         self.form_layout = QFormLayout()
         self.btn_layout = QGridLayout()
