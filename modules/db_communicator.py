@@ -24,9 +24,31 @@ class DatabaseCommunicator:
         elif read_from_db:
             self.con_name = settings.READER_CONNECTION_NAME
 
-        self.con_error = False
+        self.pallet_table_name = settings.PALLET_INFO_TABLE
+        self.client_table_name = settings.CLIENT_INFO_TABLE
 
-    def _create_connection(self):
+        self.con_error = False
+        self.connection = None
+
+    def create_pallet_table(self):
+        """ Creates the table where information related to pallets
+        is stored. """
+        if not self.connection:
+            self.create_connection()
+
+        pallet_query = QSqlQuery(self.connection)
+        query = (
+            f""" CREATE TABLE IF NOT EXISTS {self.pallet_table_name} (
+            Min_Value INTEGER,
+            Max_Value INTEGER,
+            Euro INTEGER,
+            Industrial INTEGER,
+            Alternative_Euro INTEGER 
+            )"""
+        )
+        pallet_query.exec_(query)
+
+    def create_connection(self):
         """ Creates database connection. """
         self.connection = QSqlDatabase.addDatabase(
             self.db_driver, self.con_name
@@ -34,3 +56,7 @@ class DatabaseCommunicator:
         self.connection.setDatabaseName(self.db_name)
         if not self.connection.open():
             self.con_error = True
+
+
+if __name__ == '__main__':
+    pass
