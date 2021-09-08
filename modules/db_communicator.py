@@ -30,6 +30,41 @@ class DatabaseCommunicator:
         self.con_error = False
         self.connection = None
 
+    def get_pallet_info(self, total_boxes: int):
+        """ Returns the suggested pallet combination necessary for the
+        total_boxes entered. """
+        if not self.connection:
+            self.create_connection()
+
+        pallet_info_query = QSqlQuery(self.connection)
+        query = f'SELECT Euro, Industrial, Alternative_Euro ' \
+                f'FROM {self.pallet_table_name} WHERE Min_Value <= {total_boxes}' \
+                f' and Max_Value >= {total_boxes}'
+        if pallet_info_query.prepare(query):
+            pallet_info_query.exec_()
+
+            pallet_info_query.first()
+
+            euro_pallet = pallet_info_query.value(
+                pallet_info_query.record().indexOf('Euro')
+            )
+            industrial_pallet = pallet_info_query.value(
+                pallet_info_query.record().indexOf('Industrial')
+            )
+            alternative_euro = pallet_info_query.value(
+                pallet_info_query.record().indexOf('Alternative_Euro')
+            )
+            if all((not euro_pallet, not industrial_pallet, not alternative_euro)):
+                return {}
+
+            return {
+                'euro': euro_pallet,
+                'industrial': industrial_pallet,
+                'alternative_euro': alternative_euro
+            }
+        else:
+            return {}
+
     def write_to_client_table(self, info_to_write: list):
         """ Writes the necessary information to client table in the database
         used in this algorithm. """
@@ -126,7 +161,5 @@ class DatabaseCommunicator:
 
 
 if __name__ == '__main__':
-    info = [1, 2]
-    DatabaseCommunicator(write_to_db=True).write_to_client_table(
-        info
-    )
+    reader = DatabaseCommunicator(read_from_db=True)
+    print(reader.get_pallet_info(10))
