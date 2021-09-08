@@ -5,7 +5,8 @@ from PyQt5.QtWidgets import (QApplication, QLabel,
                              QWidget, QFormLayout,
                              QMainWindow, QPushButton,
                              QComboBox, QLineEdit,
-                             QVBoxLayout, QGridLayout)
+                             QVBoxLayout, QGridLayout,
+                             QMessageBox)
 
 from PyQt5.QtGui import QFont
 
@@ -46,6 +47,18 @@ class MainPage(QMainWindow):
     def _connect_signals_slots(self):
         """ Connects widgets with their respective functions """
         self.g_sheet_link.textChanged.connect(self._link_label_responder)
+        self.close_app_btn.clicked.connect(self._close_btn_responder)
+
+    def _close_btn_responder(self):
+        """ Responds to user's click on the button named 'Chiudi' """
+        user_choice = helper_functions.ask_before_close(
+            msg_box_font=MSG_FONT,
+            window_tile=APP_INFO_JSON_CONTENTS.get('window_title'),
+        )
+        if user_choice == QMessageBox.Yes:
+            self.close()
+        else:
+            pass
 
     def _link_label_responder(self):
         """ Keeps track of when user enter or does not enter a link
