@@ -11,6 +11,43 @@ import settings
 from helper_modules import helper_functions
 
 
+def determine_max_per_pallet(pallet_name: str, tot_pallet: int, total_boxes_ordered: int):
+    if not tot_pallet:
+        return 0, 0
+    else:
+
+        if pallet_name == 'euro' or pallet_name == 'alternative_euro':
+            max_per_pallet = helper_functions.get_pallet_limit(
+                limit_decider_range=settings.EURO_LIMIT_CHANGE_FROM,
+                tot_pallet=tot_pallet, max_capacity=settings.EURO_PALLET_MAX,
+                min_capacity=settings.EURO_PALLET_MIN
+            )
+            if max_per_pallet == settings.EURO_PALLET_MAX:
+                return tot_pallet, max_per_pallet
+            elif total_boxes_ordered % max_per_pallet == 0:
+                final_tot_pallet = int(total_boxes_ordered / max_per_pallet)
+                return final_tot_pallet, max_per_pallet
+            else:
+                final_tot_pallet = total_boxes_ordered // max_per_pallet + 1
+                return final_tot_pallet, max_per_pallet
+
+        else:
+            max_per_pallet = helper_functions.get_pallet_limit(
+                limit_decider_range=settings.INDUSTRIAL_LIMIT_CHANGE_FROM,
+                min_capacity=settings.INDUSTRIAL_PALLET_LIMIT_MIN,
+                max_capacity=settings.INDUSTRIAL_PALLET_LIMIT_MAX,
+                tot_pallet=tot_pallet
+            )
+            if max_per_pallet == settings.INDUSTRIAL_PALLET_LIMIT_MAX:
+                return tot_pallet, max_per_pallet
+            elif total_boxes_ordered % max_per_pallet == 0:
+                final_tot_pallet = int(total_boxes_ordered / max_per_pallet)
+                return final_tot_pallet, max_per_pallet
+            else:
+                final_tot_pallet = total_boxes_ordered // max_per_pallet + 1
+                return final_tot_pallet, max_per_pallet
+
+
 class DatabaseCommunicator:
     """ Communicates with the database used in this project. """
 
@@ -57,11 +94,23 @@ class DatabaseCommunicator:
             if all((not euro_pallet, not industrial_pallet, not alternative_euro)):
                 return {}
 
-            return {
+            pallets = {
                 'euro': euro_pallet,
                 'industrial': industrial_pallet,
                 'alternative_euro': alternative_euro
             }
+            remaining_boxes = total_boxes
+            print('returned pal', pallets)
+            final_pallets = {}
+            for pallet in pallets:
+                if not pallets[pallet]:
+                    final_pallets[pallet] = (0, 0)
+                else:
+                    final_pallets[pallet] = determine_max_per_pallet(pallet_name=pallet, tot_pallet=pallets[pallet],
+                                                                     total_boxes_ordered=remaining_boxes)
+                    remaining_boxes -= final_pallets[pallet][0] * final_pallets[pallet][1]
+
+            return final_pallets
         else:
             return {}
 
@@ -162,4 +211,6 @@ class DatabaseCommunicator:
 
 if __name__ == '__main__':
     reader = DatabaseCommunicator(read_from_db=True)
-    print(reader.get_pallet_info(10))
+    print(reader.get_pallet_info(
+        total_boxes=920
+    ))
