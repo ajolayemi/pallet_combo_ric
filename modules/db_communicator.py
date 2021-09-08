@@ -67,6 +67,27 @@ class DatabaseCommunicator:
         self.con_error = False
         self.connection = None
 
+    def get_pallet_info_pl(self, total_boxes: int):
+        """ Returns the suggested pallet combination necessary for the
+        total_boxes entered for all logistics that are for Poland """
+        if not self.connection:
+            self.create_connection()
+
+        pl_pallet_info_query = QSqlQuery(self.connection)
+        query = f'SELECT Poland_Euro FROM {self.pallet_table_name} ' \
+                f'WHERE Min_Value <= {total_boxes} AND Max_Value >= {total_boxes}'
+        if pl_pallet_info_query.prepare(query):
+            pl_pallet_info_query.exec_()
+
+            pl_pallet_info_query.first()
+            pl_euro_pallet = pl_pallet_info_query.value(
+                pl_pallet_info_query.record().indexOf('Poland_Euro')
+            )
+            return {'euro': determine_max_per_pallet(
+                pallet_name='euro', tot_pallet=pl_euro_pallet,
+                total_boxes_ordered=total_boxes
+            )}
+
     def get_pallet_info(self, total_boxes: int):
         """ Returns the suggested pallet combination necessary for the
         total_boxes entered for all logistics that aren't for Poland. """
@@ -213,6 +234,6 @@ class DatabaseCommunicator:
 
 if __name__ == '__main__':
     reader = DatabaseCommunicator(read_from_db=True)
-    print(reader.get_pallet_info(
-        total_boxes=920
+    print(reader.get_pallet_info_pl(
+        total_boxes=630
     ))
