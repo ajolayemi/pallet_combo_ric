@@ -100,7 +100,6 @@ class DatabaseCommunicator:
                 'alternative_euro': alternative_euro
             }
             remaining_boxes = total_boxes
-            print('returned pal', pallets)
             final_pallets = {}
             for pallet in pallets:
                 if not pallets[pallet]:
