@@ -12,7 +12,7 @@ GOOGLE_SHEET_WB_NAME = 'Feed Algoritmo per PED'
 DATABASE_NAME = 'info_pedane.sqlite'
 PALLET_INFO_TABLE = 'Pallets'
 CLIENT_INFO_TABLE = 'Clients'
-CONNECTION_NAME = f'{helper_functions.get_user_name()}_Writer'
+WRITING_CONNECTION_NAME = f'{helper_functions.get_user_name()}_Writer'
 DATABASE_DRIVER = 'QSQLITE'
 READER_CONNECTION_NAME = f'{helper_functions.get_user_name()}_Reader'
 
