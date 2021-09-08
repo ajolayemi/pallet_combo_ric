@@ -3,6 +3,7 @@ functioning of this algorithm. """
 
 from helper_modules import helper_functions
 
+WINDOW_TITLE = 'PED RiC'
 INFORMATION_JSON = '../app_info_json.json'
 TO_DO_COMBO_ITEMS = ['Sì', 'No']
 GOOGLE_SHEET_WB_NAME = 'Feed Algoritmo per PED'
