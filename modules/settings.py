@@ -22,12 +22,12 @@ READER_CONNECTION_NAME = f'{helper_functions.get_user_name()}_Reader'
 # Some info and functions related to pallets -
 # these are information that remain the same for a long time
 
-EURO_PALLET_MAX = 64
-EURO_PALLET_MIN = 56
-INDUSTRIAL_PALLET_LIMIT_MAX = 80
-INDUSTRIAL_PALLET_LIMIT_MIN = 70
-EURO_LIMIT_CHANGE_FROM = 10
-INDUSTRIAL_LIMIT_CHANGE_FROM = 14
+EURO_PALLET_MAX = 64  # boxes
+EURO_PALLET_MIN = 56  # boxes
+INDUSTRIAL_PALLET_LIMIT_MAX = 80  # boxes
+INDUSTRIAL_PALLET_LIMIT_MIN = 70  # boxes
+EURO_LIMIT_CHANGE_FROM = 10  # pallets
+INDUSTRIAL_LIMIT_CHANGE_FROM = 14  # pallets
 
 
 if __name__ == '__main__':
