@@ -52,13 +52,14 @@ class MainPage(QMainWindow):
         in the line edit widget labeled 'Link' """
         if self.g_sheet_link.text():
             self.to_do_combo.setEnabled(True)
+            self.combine_pallet_btn.setEnabled(True)
             self.google_sheet_link = self.g_sheet_link.text()
         else:
             self.to_do_combo.setEnabled(False)
+            self.combine_pallet_btn.setEnabled(False)
 
     def _set_initial_state(self):
         """ Sets the initial state of the GUI by enabling some widgets. """
-        self.close_app_btn.setEnabled(False)
         self.combine_pallet_btn.setEnabled(False)
         self.to_do_combo.setEnabled(False)
 
