@@ -30,6 +30,29 @@ class DatabaseCommunicator:
         self.con_error = False
         self.connection = None
 
+    def write_to_client_table(self, info_to_write: list):
+        """ Writes the necessary information to client table in the database
+        used in this algorithm. """
+        if len(info_to_write) == settings.MAX_CLIENT_INFO:
+            self.create_client_info_table()
+            if not self.connection:
+                self.create_client_info_table()
+            client_writer_query = QSqlQuery(self.connection)
+            query = (
+                f""" INSERT INTO {self.client_table_name} (
+                Client_Name,
+                Client_Logistic
+                )
+                VALUES (
+                ?, ?)
+                """
+            )
+            if client_writer_query.prepare(query):
+                client_writer_query.addBindValue(info_to_write[0])
+                client_writer_query.addBindValue(info_to_write[1])
+
+                client_writer_query.exec_()
+
     def write_to_pallet_table(self, info_to_write: list):
         """ Writes the necessary information passed into info_to_write parameter
         into pallet_table in the database used in this project.
@@ -56,8 +79,6 @@ class DatabaseCommunicator:
                 pallet_writer_query.addBindValue(info_to_write[4])
 
                 pallet_writer_query.exec_()
-            else:
-                print('Query exec failed')
 
     def create_client_info_table(self):
         """ Creates the table where information related to clients is
@@ -105,7 +126,7 @@ class DatabaseCommunicator:
 
 
 if __name__ == '__main__':
-    info = [1, 2, 3, 4, 5]
-    DatabaseCommunicator(write_to_db=True).write_to_pallet_table(
+    info = [1, 2]
+    DatabaseCommunicator(write_to_db=True).write_to_client_table(
         info
     )
