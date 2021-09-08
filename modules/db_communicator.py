@@ -72,11 +72,11 @@ class DatabaseCommunicator:
                 VALUES (?, ?, ?, ?, ?)"""
             )
             if pallet_writer_query.prepare(query):
-                pallet_writer_query.addBindValue(info_to_write[0])
-                pallet_writer_query.addBindValue(info_to_write[1])
-                pallet_writer_query.addBindValue(info_to_write[2])
-                pallet_writer_query.addBindValue(info_to_write[3])
-                pallet_writer_query.addBindValue(info_to_write[4])
+                pallet_writer_query.addBindValue(int(info_to_write[0]))
+                pallet_writer_query.addBindValue(int(info_to_write[1]))
+                pallet_writer_query.addBindValue(int(info_to_write[2]))
+                pallet_writer_query.addBindValue(int(info_to_write[3]))
+                pallet_writer_query.addBindValue(int(info_to_write[4]))
 
                 pallet_writer_query.exec_()
 
