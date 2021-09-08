@@ -27,7 +27,7 @@ class MainPage(QMainWindow):
 
     def __init__(self, parent=None):
         super(MainPage, self).__init__(parent)
-        self.setWindowTitle(APP_INFO_JSON_CONTENTS.get('window_title'))
+        self.setWindowTitle(settings.WINDOW_TITLE)
         self.resize(300, 120)
         self.central_wid = QWidget()
 
@@ -53,7 +53,7 @@ class MainPage(QMainWindow):
         """ Responds to user's click on the button named 'Chiudi' """
         user_choice = helper_functions.ask_before_close(
             msg_box_font=MSG_FONT,
-            window_tile=APP_INFO_JSON_CONTENTS.get('window_title'),
+            window_tile=settings.WINDOW_TITLE,
         )
         if user_choice == QMessageBox.Yes:
             self.close()
