@@ -69,7 +69,7 @@ class DatabaseCommunicator:
 
     def get_pallet_info(self, total_boxes: int):
         """ Returns the suggested pallet combination necessary for the
-        total_boxes entered. """
+        total_boxes entered for all logistics that aren't for Poland. """
         if not self.connection:
             self.create_connection()
 
@@ -151,8 +151,9 @@ class DatabaseCommunicator:
                 Max_Value,
                 Euro,
                 Industrial,
-                Alternative_Euro)
-                VALUES (?, ?, ?, ?, ?)"""
+                Alternative_Euro,
+                Poland_Euro)
+                VALUES (?, ?, ?, ?, ?; ?)"""
             )
             if pallet_writer_query.prepare(query):
                 pallet_writer_query.addBindValue(int(info_to_write[0]))
@@ -160,6 +161,7 @@ class DatabaseCommunicator:
                 pallet_writer_query.addBindValue(int(info_to_write[2]))
                 pallet_writer_query.addBindValue(int(info_to_write[3]))
                 pallet_writer_query.addBindValue(int(info_to_write[4]))
+                pallet_writer_query.addBindValue(int(info_to_write[5]))
 
                 pallet_writer_query.exec_()
 
@@ -193,7 +195,8 @@ class DatabaseCommunicator:
             Max_Value INTEGER,
             Euro INTEGER,
             Industrial INTEGER,
-            Alternative_Euro INTEGER 
+            Alternative_Euro INTEGER,
+            Poland_Euro INTEGER
             )"""
         )
         pallet_query.exec_(query)
