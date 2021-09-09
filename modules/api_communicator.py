@@ -7,11 +7,12 @@ import string
 from PyQt5.QtCore import pyqtSignal, QObject
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
+from collections import namedtuple
 
 # Self defined modules
 import settings
 from helper_modules import helper_functions
-from collections import namedtuple
+from db_communicator import DatabaseCommunicator
 
 
 API_INFO_JSON_CONTENTS = helper_functions.json_file_loader(
@@ -99,6 +100,8 @@ class PedApi(QObject):
     started = pyqtSignal()
     finished = pyqtSignal()
     unfinished = pyqtSignal()
+    db_updated = pyqtSignal()
+    db_not_updated = pyqtSignal()
 
     def __init__(self, order_spreadsheet: str, overwrite_data: bool):
         super(PedApi, self).__init__()
@@ -129,10 +132,30 @@ class PedApi(QObject):
 
         self._create_pallet_api_service()
 
+    def get_pallet_range_data(self):
+        """ Reads from a Google Spreadsheet some data related to pallet
+        ranges and store them in the database. """
+        db_writer_class = DatabaseCommunicator(write_to_db=True)
+        pallet_ranges = self.sheet_api.values().get(
+            spreadsheetId=self.pallet_info_sheet_id,
+            range=self.pallet_info_read_range).execute()
+        values_to_write = pallet_ranges.get('values', [])[1:]
+        for data in values_to_write:
+            write_result = db_writer_class.write_to_pallet_table(
+                info_to_write=data
+            )
+        if write_result:
+            self.db_updated.emit('Database aggiornato con successo')
+        else:
+            self.db_not_updated.emit('Aggiornamento di database non riuscito')
+
     def _create_pallet_api_service(self):
         self.api_service = build('sheets', 'v4', credentials=self.api_creds)
         self.sheet_api = self.api_service.spreadsheets()
 
 
 if __name__ == '__main__':
-    pass
+    order_link = \
+        'https://docs.google.com/spreadsheets/d/13hMFE5_geDifTbeBn4fsFx5MANFSGSCVRY6eAH0SCkA/edit#gid=1330242481'
+    test = PedApi(order_spreadsheet=order_link, overwrite_data=True)
+    print(test.get_pallet_range_data())
