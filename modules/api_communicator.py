@@ -127,6 +127,12 @@ class PedApi(QObject):
         self.api_service = None
         self.sheet_api = None
 
+        self._create_pallet_api_service()
+
+    def _create_pallet_api_service(self):
+        self.api_service = build('sheets', 'v4', credentials=self.api_creds)
+        self.sheet_api = self.api_service.spreadsheets()
+
 
 if __name__ == '__main__':
     pass
