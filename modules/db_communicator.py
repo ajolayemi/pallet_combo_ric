@@ -234,5 +234,5 @@ class DatabaseCommunicator:
 
 
 if __name__ == '__main__':
-    db = DatabaseCommunicator(read_from_db=True)
-    print(db.get_pallet_info(total_boxes=1080))
+    pass
+
