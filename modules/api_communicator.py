@@ -103,7 +103,7 @@ class PedApi(QObject):
     def __init__(self, order_spreadsheet: str, overwrite_data: bool):
         super(PedApi, self).__init__()
         self.scopes = ['https://www.googleapis.com/auth/spreadsheets']
-        self.api_key_file = API_INFO_JSON_CONTENTS.get('pallet_api_key_json')
+        self.api_key_file = API_INFO_JSON_CONTENTS.get('api_key_file_name')
         self.api_creds = service_account.Credentials.from_service_account_file(
             self.api_key_file, scopes=self.scopes
         )
