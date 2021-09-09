@@ -29,6 +29,12 @@ INDUSTRIAL_PALLET_LIMIT_MIN = 70  # boxes
 EURO_LIMIT_CHANGE_FROM = 10  # pallets
 INDUSTRIAL_LIMIT_CHANGE_FROM = 14  # pallets
 
+PALLETS_BASE_INFO = {
+                'euro': ['Euro', 8],
+                'industrial': ['Ind', 10],
+                'alternative_euro': ['Euro', 8]
+            }
+
 # This keeps track of whether all pallets going to Poland has to be EURO or not
 POLAND_ALL_EURO = True
 POLAND_LOGISTICS = ['UPS Polska', 'Good Speed',
