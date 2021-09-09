@@ -135,6 +135,22 @@ class PedApi(QObject):
         self._create_pallet_api_service()
         self.get_all_orders()
 
+    def get_all_logistics(self) -> dict:
+        """ Returns all logistics and there respective total boxes
+        from the order contents read from Google Spreadsheet. """
+        logistics = {}
+        for order_content in self.all_orders:
+            float_num = helper_functions.name_controller(
+                name=order_content[6], new_char='.',
+                char_to_remove=',')
+            if order_content[5] not in logistics:
+                # Removes , from numbers that have it
+                logistics[order_content[5]] = float(float_num)
+            else:
+                logistics[order_content[5]] += float(float_num)
+
+        return logistics
+
     def get_all_orders(self):
         """ Reads from the spreadsheet that contains client orders and returns
         the data from it. """
@@ -171,4 +187,4 @@ if __name__ == '__main__':
     order_link = \
         'https://docs.google.com/spreadsheets/d/13hMFE5_geDifTbeBn4fsFx5MANFSGSCVRY6eAH0SCkA/edit#gid=1330242481'
     test = PedApi(order_spreadsheet=order_link, overwrite_data=True)
-    print(test.all_orders[90:])
+    print(test.get_all_logistics())
