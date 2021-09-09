@@ -105,6 +105,7 @@ class DatabaseCommunicator:
             alternative_euro = pallet_info_query.value(
                 pallet_info_query.record().indexOf('Alternative_Euro')
             )
+            # If no value is found for the specified total_boxes
             if all((not euro_pallet, not industrial_pallet, not alternative_euro)):
                 return {}
 
@@ -113,6 +114,13 @@ class DatabaseCommunicator:
                 'industrial': industrial_pallet,
                 'alternative_euro': alternative_euro
             }
+            # If there is a value for alternative euro
+            if pallets.get('alternative_euro'):
+                return {'alternative_euro':
+                        determine_max_per_pallet(pallet_name='alternative_euro',
+                                                 tot_pallet=pallets.get('alternative_euro'),
+                                                 total_boxes_ordered=total_boxes)}
+
             remaining_boxes = total_boxes
             final_pallets = {}
             for pallet in pallets:
@@ -227,4 +235,4 @@ class DatabaseCommunicator:
 
 if __name__ == '__main__':
     db = DatabaseCommunicator(read_from_db=True)
-    print(db.get_pallet_info(total_boxes=930))
+    print(db.get_pallet_info(total_boxes=1080))
