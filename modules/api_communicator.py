@@ -93,5 +93,40 @@ def box_distributor(pallet_type: str, tot_pallets: int,
                             pallet_num)
 
 
+class PedApi(QObject):
+
+    # Custom sigs
+    started = pyqtSignal()
+    finished = pyqtSignal()
+    unfinished = pyqtSignal()
+
+    def __init__(self, order_spreadsheet: str, overwrite_data: bool):
+        super(PedApi, self).__init__()
+        self.scopes = ['https://www.googleapis.com/auth/spreadsheets']
+        self.api_key_file = API_INFO_JSON_CONTENTS.get('pallet_api_key_json')
+        self.api_creds = service_account.Credentials.from_service_account_file(
+            self.api_key_file, scopes=self.scopes
+        )
+
+        # Google SpreadSheets Info
+        self.order_spreadsheet_id = helper_functions.get_sheet_id(
+            google_sheet_link=order_spreadsheet
+        )
+        self.order_sheet_range_to_read = API_INFO_JSON_CONTENTS.get('order_range_sheet_read')
+        self.order_sheet_range_to_write = None
+
+        # TODO - define a method that updates the value of the previous
+        #  attribute
+
+        self.pallet_info_sheet_link = API_INFO_JSON_CONTENTS.get('pallet_range_sheet_link')
+        self.pallet_info_sheet_id = helper_functions.get_sheet_id(
+            google_sheet_link=self.pallet_info_sheet_link
+        )
+        self.pallet_info_read_range = API_INFO_JSON_CONTENTS.get('pallet_range_sheet_name')
+
+        self.api_service = None
+        self.sheet_api = None
+
+
 if __name__ == '__main__':
     pass
