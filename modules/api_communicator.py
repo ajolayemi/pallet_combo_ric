@@ -4,6 +4,9 @@
 the sheets. """
 
 import string
+from PyQt5.QtCore import pyqtSignal, QObject
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
 
 # Self defined modules
 import settings
