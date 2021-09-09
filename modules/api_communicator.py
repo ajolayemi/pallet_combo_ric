@@ -130,16 +130,29 @@ class PedApi(QObject):
         self.api_service = None
         self.sheet_api = None
 
+        self.all_orders = None
+
         self._create_pallet_api_service()
+        self.get_all_orders()
+
+    def get_all_orders(self):
+        """ Reads from the spreadsheet that contains client orders and returns
+        the data from it. """
+        order_data = self.sheet_api.values().get(
+            spreadsheetId=self.order_spreadsheet_id,
+            range=self.order_sheet_range_to_read
+        ).execute()
+        all_orders = order_data.get('values', [])[1:]
+        self.all_orders = sorted(all_orders, key=lambda x: (x[5], x[1], x[2]))
 
     def get_pallet_range_data(self):
         """ Reads from a Google Spreadsheet some data related to pallet
         ranges and store them in the database. """
         db_writer_class = DatabaseCommunicator(write_to_db=True)
-        pallet_ranges = self.sheet_api.values().get(
+        pallet_data = self.sheet_api.values().get(
             spreadsheetId=self.pallet_info_sheet_id,
             range=self.pallet_info_read_range).execute()
-        values_to_write = pallet_ranges.get('values', [])[1:]
+        values_to_write = pallet_data.get('values', [])[1:]
         for data in values_to_write:
             write_result = db_writer_class.write_to_pallet_table(
                 info_to_write=data
@@ -158,4 +171,4 @@ if __name__ == '__main__':
     order_link = \
         'https://docs.google.com/spreadsheets/d/13hMFE5_geDifTbeBn4fsFx5MANFSGSCVRY6eAH0SCkA/edit#gid=1330242481'
     test = PedApi(order_spreadsheet=order_link, overwrite_data=True)
-    print(test.get_pallet_range_data())
+    print(test.all_orders[90:])
