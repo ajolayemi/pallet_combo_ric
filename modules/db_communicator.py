@@ -117,7 +117,7 @@ class DatabaseCommunicator:
             final_pallets = {}
             for pallet in pallets:
                 if not pallets[pallet]:
-                    final_pallets[pallet] = (0, 0)
+                    continue
                 else:
                     final_pallets[pallet] = determine_max_per_pallet(pallet_name=pallet, tot_pallet=pallets[pallet],
                                                                      total_boxes_ordered=remaining_boxes)
@@ -226,4 +226,5 @@ class DatabaseCommunicator:
 
 
 if __name__ == '__main__':
-    pass
+    db = DatabaseCommunicator(read_from_db=True)
+    print(db.get_pallet_info(total_boxes=930))
