@@ -186,6 +186,7 @@ class DatabaseCommunicator:
                 pallet_writer_query.addBindValue(int(info_to_write[5]))
 
                 pallet_writer_query.exec_()
+                return True
 
     def create_client_info_table(self):
         """ Creates the table where information related to clients is
