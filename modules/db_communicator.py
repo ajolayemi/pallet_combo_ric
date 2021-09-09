@@ -175,7 +175,7 @@ class DatabaseCommunicator:
                 Industrial,
                 Alternative_Euro,
                 Poland_Euro)
-                VALUES (?, ?, ?, ?, ?; ?)"""
+                VALUES (?, ?, ?, ?, ?, ?)"""
             )
             if pallet_writer_query.prepare(query):
                 pallet_writer_query.addBindValue(int(info_to_write[0]))
