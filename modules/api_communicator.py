@@ -58,13 +58,78 @@ class PedApi(QObject):
 
         self.all_orders = None
 
+        # Saves the final data that will be written to google sheet
+        self.final_data = []
+
         self._create_pallet_api_service()
         self.get_all_orders()
 
     def place_boxes_on_pallets(self, current_logistic: str,
-                               boxes_per_pallets_info: dict):
+                               boxes_per_pallets_info: dict,
+                               pallet_type: str):
+
+        # Get the code name for the current pallet
+        pallet_code_name = settings.PALLETS_BASE_INFO.get(pallet_type)[0]
+        # Get all the order related to the current client
         current_log_orders = list(filter(lambda x: x[5] == current_logistic, self.all_orders))
-        return current_log_orders
+        if current_log_orders:
+            for current_order in current_log_orders:
+
+                product_ordered_code = current_order[0]
+                qta_ordered = int(current_order[2])
+                product_pallet_ratio = float(helper_functions.name_controller(
+                    name=current_order[-1], char_to_remove=',',
+                    new_char='.'
+                ))
+
+                # Keep track of the qtà of the current product that is on pallet
+                product_qta_on_pallet = 0
+
+                qta_remaining = int(qta_ordered - product_qta_on_pallet)
+
+                # Start looping over the boxes_per_pallets_info parameter
+                # it is a named tuple containing dicts
+                boxes_info = boxes_per_pallets_info.box_division.get(pallet_code_name)
+                for pallet_full_name, pallet_current_capacity in boxes_info.items():
+                    # Keep track of the initial capacity of the current pallet
+                    pallet_initial_capacity = boxes_per_pallets_info.box_division.get(
+                        pallet_code_name)[pallet_full_name]
+                    # If qta_remaining == 0, i.e all the qta ordered for the current product
+                    # has been placed on the pallet
+                    if qta_remaining == 0:
+                        # Break the loop that loops over pallets
+                        break
+
+                    # If the current pallet capacity is 0, i.e no more space
+                    if pallet_current_capacity <= 0:
+                        continue
+
+                    # If the current product_pallet_ratio is <= current pallet_current_capacity
+                    if product_pallet_ratio <= pallet_current_capacity:
+                        data_to_append = [product_ordered_code, qta_remaining, pallet_full_name]
+                        self.final_data.append(data_to_append)
+
+                        # Update some values
+                        product_qta_on_pallet += qta_remaining
+                        qta_remaining = int(qta_ordered - product_qta_on_pallet)
+                        boxes_info[pallet_full_name] -= product_pallet_ratio
+
+                    # Elif product_pallet_ratio > pallet_current_capacity
+                    elif product_pallet_ratio > pallet_current_capacity:
+                        possible_product_qta = round(
+                            (pallet_current_capacity / pallet_initial_capacity) * product_pallet_ratio
+                        )
+                        if possible_product_qta <= 0:
+                            continue
+                        else:
+                            product_qta_on_pallet += possible_product_qta
+                            qta_remaining = qta_ordered - product_qta_on_pallet
+
+                            boxes_info[pallet_full_name] -= round((possible_product_qta / product_pallet_ratio)
+                                                                  * pallet_initial_capacity)
+                            self.final_data.append([product_ordered_code, product_qta_on_pallet, pallet_full_name])
+
+            return 'Ok for now'
 
     def construct_pallets(self):
         """ Constructs pallets by putting boxes on them. """
@@ -107,7 +172,8 @@ class PedApi(QObject):
                 # on the pallets
                 box_placer = self.place_boxes_on_pallets(
                     current_logistic=logistic,
-                    boxes_per_pallets_info=boxes_per_pallets
+                    boxes_per_pallets_info=boxes_per_pallets,
+                    pallet_type=pallet
                 )
                 print(box_placer)
 
