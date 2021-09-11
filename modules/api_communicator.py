@@ -30,6 +30,8 @@ class PedApi(QObject):
     db_updated = pyqtSignal(str)
     db_not_updated = pyqtSignal(str)
 
+    processed_orders = []
+
     def __init__(self, order_spreadsheet: str, overwrite_data: bool):
         super(PedApi, self).__init__()
 
@@ -58,7 +60,7 @@ class PedApi(QObject):
         self.api_service = None
         self.sheet_api = None
 
-        self.all_orders = None
+        self.all_orders = []
 
         # Saves the final data that will be written to google sheet
         self.final_data = []
@@ -110,10 +112,20 @@ class PedApi(QObject):
 
         # Get the code name for the current pallet
         pallet_code_name = settings.PALLETS_BASE_INFO.get(pallet_type)[0]
+
+        # Make a copy of the info related to the current pallet_code in
+        # boxes_per_pallets_info
+        boxes_per_pallets_info_copy = boxes_per_pallets_info['result'][pallet_code_name].copy()
+
         # Get all the order related to the current client
-        current_log_orders = list(filter(lambda x: x[5] == current_logistic, self.all_orders))
+        current_log_orders = list(filter(lambda x: x[5] == current_logistic and x[1] not in PedApi.processed_orders
+                                         , self.all_orders))
         if current_log_orders:
             for current_order in current_log_orders:
+                product_ordered_id = current_order[1]
+
+                if product_ordered_id in PedApi.processed_orders:
+                    continue
 
                 product_ordered_code = current_order[0]
                 qta_ordered = int(current_order[2])
@@ -129,14 +141,14 @@ class PedApi(QObject):
 
                 # Start looping over the boxes_per_pallets_info parameter
                 # it is a named tuple containing dicts
-                boxes_info = boxes_per_pallets_info.box_division.get(pallet_code_name)
+                boxes_info = boxes_per_pallets_info['result'].get(pallet_code_name)
+
                 for pallet_full_name, pallet_current_capacity in boxes_info.items():
-                    # Keep track of the initial capacity of the current pallet
-                    pallet_initial_capacity = boxes_per_pallets_info.box_division.get(
-                        pallet_code_name)[pallet_full_name]
                     # If qta_remaining == 0, i.e all the qta ordered for the current product
                     # has been placed on the pallet
                     if qta_remaining == 0:
+                        # Remove the already processed order from the list of orders
+                        PedApi.processed_orders.append(product_ordered_id)
                         # Break the loop that loops over pallets
                         break
 
@@ -146,7 +158,8 @@ class PedApi(QObject):
 
                     # If the current product_pallet_ratio is <= current pallet_current_capacity
                     if product_pallet_ratio <= pallet_current_capacity:
-                        data_to_append = [product_ordered_code, qta_remaining, pallet_full_name]
+                        data_to_append = [product_ordered_code, qta_remaining, pallet_full_name,
+                                          pallet_code_name]
                         self.final_data.append(data_to_append)
 
                         # Update some values
@@ -156,6 +169,10 @@ class PedApi(QObject):
 
                     # Elif product_pallet_ratio > pallet_current_capacity
                     elif product_pallet_ratio > pallet_current_capacity:
+
+                        # Access the initial capacity of the current pallet
+                        pallet_initial_capacity = boxes_per_pallets_info_copy.get(pallet_full_name)
+
                         possible_product_qta = round(
                             (pallet_current_capacity / pallet_initial_capacity) * product_pallet_ratio
                         )
@@ -167,7 +184,8 @@ class PedApi(QObject):
 
                             boxes_info[pallet_full_name] -= round((possible_product_qta / product_pallet_ratio)
                                                                   * pallet_initial_capacity)
-                            self.final_data.append([product_ordered_code, product_qta_on_pallet, pallet_full_name])
+                            self.final_data.append([product_ordered_code, product_qta_on_pallet, pallet_full_name,
+                                                    pallet_code_name])
 
     def construct_pallets(self):
         """ Constructs pallets by putting boxes on them. """
@@ -204,7 +222,7 @@ class PedApi(QObject):
                     tot_boxes_ordered=boxes,
                     tot_pallets=suggested_pallets[pallet][0]
                 )
-                boxes = boxes_per_pallets.remaining_boxes
+                boxes = boxes_per_pallets['remaining_boxes']
 
                 # Pass the value of boxes_per_pallets to the function that places boxes
                 # on the pallets
@@ -220,7 +238,6 @@ class PedApi(QObject):
         # If the data writing request was successful
         if write_request_response:
             self.finished.emit('Ho finito di comporre le pedane!')
-            print(write_request_response)
             # Update the writing range
             updated_range = write_request_response.get('updates').get('updatedRange')
             last_range = int(re.search(re.compile(r'\d+'), updated_range.split(':')[-1]).group()) + 1
@@ -288,5 +305,5 @@ class PedApi(QObject):
 if __name__ == '__main__':
     order_link = \
         'https://docs.google.com/spreadsheets/d/13hMFE5_geDifTbeBn4fsFx5MANFSGSCVRY6eAH0SCkA/edit#gid=1330242481'
-    test = PedApi(order_spreadsheet=order_link, overwrite_data=False)
+    test = PedApi(order_spreadsheet=order_link, overwrite_data=True)
     print(test.construct_pallets())
