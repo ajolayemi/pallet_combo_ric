@@ -61,7 +61,7 @@ class Distributor:
 
                 # If the value of boxes_per_pallets * tot_pallets <= remaining_boxes
                 # distribute the boxes in tot_pallets equally
-                elif boxes_per_pallets * remaining_pallets <= remaining_boxes:
+                elif (boxes_per_pallets * remaining_pallets) <= remaining_boxes:
                     result[pallet_code_name][current_pallet_name] = boxes_per_pallets
                     remaining_boxes -= boxes_per_pallets
                     remaining_pallets -= 1
@@ -71,7 +71,7 @@ class Distributor:
                 else:
                     # If the current value of remaining_boxes // remaining_pallets
                     # is not a multiple of the base of the pallet.
-                    if remaining_boxes // remaining_pallets % pallet_base_value:
+                    if (remaining_boxes // remaining_pallets) % pallet_base_value:
                         valid_boxes = helper_functions.get_multiples_of(
                             number=pallet_base_value, multiple_start=remaining_boxes // remaining_pallets,
                             multiple_limit=boxes_per_pallets
