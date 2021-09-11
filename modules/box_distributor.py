@@ -47,7 +47,7 @@ class Distributor:
                     self.last_ped_alpha = helper_functions.get_next_alpha(
                         current_alpha=pallet_alphabet
                     )
-                    current_pallet_name = f"PED {self.last_ped_num}{self.last_ped_alpha} " \
+                    current_pallet_name = f"PED {self.last_ped_num} {self.last_ped_alpha} " \
                                           f"{logistic_details[0]} del {logistic_details[1]}"
                 else:
                     current_pallet_name = f"PED {self.last_ped_num} {logistic_details[0]} " \
