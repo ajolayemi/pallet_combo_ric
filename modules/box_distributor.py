@@ -21,7 +21,7 @@ class Distributor:
 
     def box_distributor(self, pallet_type: str, tot_pallets: int,
                         boxes_per_pallets: int, tot_boxes_ordered: int,
-                        logistic_details: list):
+                        logistic_details: list) -> dict:
         """ Distributes all the boxes ordered provided by the tot_boxes_ordered
         parameter on the total available pallets given by tot_pallets parameter value.
         For example, if the total available pallets for a certain logistic is 10 and the total
@@ -91,4 +91,4 @@ class Distributor:
                 keys_values_to_update={'last_pallet_num': self.last_ped_num,
                                        'last_pallet_letter': self.last_ped_alpha}
             )
-            return result_tuple(result, remaining_boxes)
+            return {'result': result, 'remaining_boxes': remaining_boxes}
