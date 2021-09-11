@@ -3,12 +3,15 @@
 """ Handles the logic behind the correct placement of boxes on
 pallets. """
 
+# Self defined module
+import settings
+
 
 class Distributor:
 
     def __init__(self):
         self.all_api_contents = helper_functions.json_file_loader(
-            file_name='../app_info_json.json'
+            file_name=settings.INFORMATION_JSON
         )
         self.last_ped_num = self.all_api_contents.get('last_pallet_num')
         self.last_ped_alpha = self.all_api_contents.get('last_pallet_letter')
@@ -81,7 +84,7 @@ class Distributor:
 
             result_tuple = namedtuple('BoxDivision', ['box_division', 'remaining_boxes'])
             helper_functions.update_json_content(
-                json_file_name='../app_info_json.json',
+                json_file_name=settings.INFORMATION_JSON,
                 keys_values_to_update={'last_pallet_num': self.last_ped_num,
                                        'last_pallet_letter': self.last_ped_alpha}
             )
