@@ -3,8 +3,11 @@
 """ Handles the logic behind the correct placement of boxes on
 pallets. """
 
+from collections import namedtuple
+
 # Self defined module
 import settings
+from helper_modules import helper_functions
 
 
 class Distributor:
