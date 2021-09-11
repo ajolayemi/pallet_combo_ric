@@ -30,9 +30,13 @@ def determine_max_per_pallet(pallet_name: str, tot_pallet: int, total_boxes_orde
                 max_capacity=settings.INDUSTRIAL_PALLET_LIMIT_MAX,
                 tot_pallet=tot_pallet
             )
+
+        # If the max_per_pallet value is equals the maximum capacity of a pallet
         if max_per_pallet == settings.INDUSTRIAL_PALLET_LIMIT_MAX \
                 or max_per_pallet == settings.EURO_PALLET_MAX:
             return tot_pallet, max_per_pallet
+
+        # elif the total number of boxes ordered % the max capacity of a pallet == 0
         elif total_boxes_ordered % max_per_pallet == 0:
             final_tot_pallet = int(total_boxes_ordered / max_per_pallet)
             return final_tot_pallet, max_per_pallet
