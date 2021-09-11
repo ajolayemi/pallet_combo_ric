@@ -4,6 +4,7 @@
 the sheets. """
 import math
 import string
+import re
 from PyQt5.QtCore import pyqtSignal, QObject
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -23,14 +24,17 @@ API_INFO_JSON_CONTENTS = helper_functions.json_file_loader(
 class PedApi(QObject):
 
     # Custom sigs
-    started = pyqtSignal()
-    finished = pyqtSignal()
-    unfinished = pyqtSignal()
-    db_updated = pyqtSignal()
-    db_not_updated = pyqtSignal()
+    started = pyqtSignal(str)
+    finished = pyqtSignal(str)
+    unfinished = pyqtSignal(str)
+    db_updated = pyqtSignal(str)
+    db_not_updated = pyqtSignal(str)
 
     def __init__(self, order_spreadsheet: str, overwrite_data: bool):
         super(PedApi, self).__init__()
+
+        self.overwrite_data = overwrite_data
+
         self.scopes = ['https://www.googleapis.com/auth/spreadsheets']
         self.api_key_file = API_INFO_JSON_CONTENTS.get('api_key_file_name')
         self.api_creds = service_account.Credentials.from_service_account_file(
@@ -42,10 +46,8 @@ class PedApi(QObject):
             google_sheet_link=order_spreadsheet
         )
         self.order_sheet_range_to_read = API_INFO_JSON_CONTENTS.get('order_range_sheet_read')
+        self.order_sheet_range_to_clear = API_INFO_JSON_CONTENTS.get('order_range_sheet_to_be_cleared')
         self.order_sheet_range_to_write = None
-
-        # TODO - define a method that updates the value of the previous
-        #  attribute
 
         self.pallet_info_sheet_link = API_INFO_JSON_CONTENTS.get('pallet_range_sheet_link')
         self.pallet_info_sheet_id = helper_functions.get_sheet_id(
@@ -62,11 +64,49 @@ class PedApi(QObject):
         self.final_data = []
 
         self._create_pallet_api_service()
+
+        # Call on the  method that updates the value of the previous
+        #  attribute
+        self.update_sheet_writing_range()
         self.get_all_orders()
 
-    def place_boxes_on_pallets(self, current_logistic: str,
-                               boxes_per_pallets_info: dict,
-                               pallet_type: str):
+    def write_data_to_google_sheet(self):
+        write_request = self.api_service.spreadsheets().values().append(
+            spreadsheetId=self.order_spreadsheet_id,
+            range=self.order_sheet_range_to_write,
+            valueInputOption='USER_ENTERED',
+            insertDataOption='OVERWRITE',
+            body={'values': self.final_data}
+        )
+        res = write_request.execute()
+        return res
+
+    def update_sheet_writing_range(self):
+        """ Clears the existing data in google sheet.
+        Updates the range for data writing. """
+        if self.overwrite_data:
+            # Clear existing data in google sheet
+            self.api_service.spreadsheets().values().batchClear(
+                spreadsheetId=self.order_spreadsheet_id,
+                body={'ranges': self.order_sheet_range_to_clear}
+            ).execute()
+
+            # Update writing range
+            helper_functions.update_json_content(
+                json_file_name=settings.INFORMATION_JSON,
+                keys_values_to_update={
+                    'order_range_sheet_for_writing': f'{settings.GOOGLE_SHEET_INITIAL_WRITING_RANGE}2'}
+            )
+        else:
+            pass
+
+        # Set the value of order_sheet_range_to_write (this class attribute)
+        # to the new range
+        self.order_sheet_range_to_write = helper_functions.json_file_loader(
+            file_name=settings.INFORMATION_JSON).get('order_range_sheet_for_writing')
+
+    def place_boxes_on_pallets(self, current_logistic: str, boxes_per_pallets_info: dict,
+                               pallet_type: str) -> None:
 
         # Get the code name for the current pallet
         pallet_code_name = settings.PALLETS_BASE_INFO.get(pallet_type)[0]
@@ -129,8 +169,6 @@ class PedApi(QObject):
                                                                   * pallet_initial_capacity)
                             self.final_data.append([product_ordered_code, product_qta_on_pallet, pallet_full_name])
 
-            return 'Ok for now'
-
     def construct_pallets(self):
         """ Constructs pallets by putting boxes on them. """
         db_reader = DatabaseCommunicator(read_from_db=True)
@@ -170,12 +208,34 @@ class PedApi(QObject):
 
                 # Pass the value of boxes_per_pallets to the function that places boxes
                 # on the pallets
-                box_placer = self.place_boxes_on_pallets(
+                self.place_boxes_on_pallets(
                     current_logistic=logistic,
                     boxes_per_pallets_info=boxes_per_pallets,
                     pallet_type=pallet
                 )
-                print(box_placer)
+
+        # write the final data
+        write_request_response = self.write_data_to_google_sheet()
+
+        # If the data writing request was successful
+        if write_request_response:
+            self.finished.emit('Ho finito di comporre le pedane!')
+            print(write_request_response)
+            # Update the writing range
+            updated_range = write_request_response.get('updates').get('updatedRange')
+            last_range = int(re.search(re.compile(r'\d+'), updated_range.split(':')[-1]).group()) + 1
+            helper_functions.update_json_content(
+                json_file_name=settings.INFORMATION_JSON,
+                keys_values_to_update={'order_range_sheet_for_writing'
+                                       : f'{settings.GOOGLE_SHEET_INITIAL_WRITING_RANGE}{last_range}'}
+            )
+        else:
+            self.unfinished.emit("C'è stato un errore durante la composizione delle pedane")
+            # Clear any data written in google sheet
+            self.api_service.spreadsheets().values().batchClear(
+                spreadsheetId=self.order_spreadsheet_id,
+                body={'ranges': self.order_sheet_range_to_clear}
+            ).execute()
 
     def get_all_logistics(self) -> dict:
         """ Returns all logistics and there respective total boxes
@@ -228,5 +288,5 @@ class PedApi(QObject):
 if __name__ == '__main__':
     order_link = \
         'https://docs.google.com/spreadsheets/d/13hMFE5_geDifTbeBn4fsFx5MANFSGSCVRY6eAH0SCkA/edit#gid=1330242481'
-    test = PedApi(order_spreadsheet=order_link, overwrite_data=True)
-    test.construct_pallets()
+    test = PedApi(order_spreadsheet=order_link, overwrite_data=False)
+    print(test.construct_pallets())

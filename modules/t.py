@@ -1,3 +1,7 @@
+import re
+
+import requests.exceptions
+
 a = {'Euro': {'PED 73 (B2C-PL) del 17/12/2020': 56,
               'PED 74 (B2C-PL) del 17/12/2020': 56, 'PED 75 (B2C-PL) del 17/12/2020': 56,
               'PED 76 (B2C-PL) del 17/12/2020': 56, 'PED 77 (B2C-PL) del 17/12/2020': 56,
@@ -8,6 +12,13 @@ a = {'Euro': {'PED 73 (B2C-PL) del 17/12/2020': 56,
               'PED 86 (B2C-PL) del 17/12/2020': 48, 'PED 87 (B2C-PL) del 17/12/2020': 48,
               'PED 88 (B2C-PL) del 17/12/2020': 56, 'PED 89 (B2C-PL) del 17/12/2020': 48,
               'PED 90 (B2C-PL) del 17/12/2020': 43}}
+
+b = "'Feed Algoritmo per PED'!M942:O1881"
+
+print(b.split(':'))
+c = re.search(re.compile(r'\d+'), b.split(':')[-1]).group()
+
+print(c)
 
 
 if __name__ == '__main__':

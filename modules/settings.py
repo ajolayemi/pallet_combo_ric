@@ -7,6 +7,7 @@ WINDOW_TITLE = 'PED RiC'
 INFORMATION_JSON = '../app_info_json.json'
 TO_DO_COMBO_ITEMS = ['Sì', 'No']
 GOOGLE_SHEET_WB_NAME = 'Feed Algoritmo per PED'
+GOOGLE_SHEET_INITIAL_WRITING_RANGE = 'Feed Algoritmo per PED!M'
 
 ADP_CHANNEL_CODE = '(Serv-AdP)'
 
