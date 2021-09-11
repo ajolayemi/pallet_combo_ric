@@ -13,95 +13,11 @@ from collections import namedtuple
 import settings
 from helper_modules import helper_functions
 from db_communicator import DatabaseCommunicator
-
+from box_distributor import Distributor
 
 API_INFO_JSON_CONTENTS = helper_functions.json_file_loader(
-    file_name='../app_info_json.json'
+    file_name=settings.INFORMATION_JSON
 )
-
-
-class Distributor:
-
-    def __init__(self):
-        self.all_api_contents = helper_functions.json_file_loader(
-            file_name='../app_info_json.json'
-        )
-        self.last_ped_num = self.all_api_contents.get('last_pallet_num')
-        self.last_ped_alpha = self.all_api_contents.get('last_pallet_letter')
-
-    def box_distributor(self, pallet_type: str, tot_pallets: int,
-                        boxes_per_pallets: int, tot_boxes_ordered: int,
-                        logistic_details: list):
-        """ Distributes all the boxes ordered provided by the tot_boxes_ordered
-        parameter on the total available pallets given by tot_pallets parameter value.
-        For example, if the total available pallets for a certain logistic is 10 and the total
-        number of boxes ordered are 1000, this function distributes all the thousand boxes
-        on the 10 pallets.
-        It returns a named tuple. """
-
-        pallet_type_base_info = settings.PALLETS_BASE_INFO.get(pallet_type)
-
-        if pallet_type_base_info and logistic_details:
-            pallet_code_name = pallet_type_base_info[0]
-            pallet_base_value = pallet_type_base_info[1]
-            result = {pallet_code_name: {}}
-            remaining_boxes = tot_boxes_ordered
-            remaining_pallets = tot_pallets
-
-            # Loop over the value provided for total_pallets
-            for current_pallet_num in range(1, int(tot_pallets) + 1):
-                self.last_ped_num += 1
-                # logistic_details is a list that contains the following information
-                # [client channel of order (B2C - LV, B2C - PL), date of shipping]
-                if logistic_details[0] == settings.ADP_CHANNEL_CODE:
-                    self.last_ped_alpha = helper_functions.get_next_alpha(
-                        current_alpha=pallet_alphabet
-                    )
-                    current_pallet_name = f"PED {self.last_ped_num}{self.last_ped_alpha} " \
-                                          f"{logistic_details[0]} del {logistic_details[1]}"
-                else:
-                    current_pallet_name = f"PED {self.last_ped_num} {logistic_details[0]} " \
-                                        f"del {logistic_details[1]}"
-
-                # If the current remaining boxes is less than the value of boxes_per_pallets
-                if remaining_boxes < boxes_per_pallets:
-                    result[pallet_code_name][current_pallet_name] = remaining_boxes
-                    remaining_boxes -= remaining_boxes
-                    remaining_pallets -= 1
-
-                # If the value of boxes_per_pallets * tot_pallets <= remaining_boxes
-                # distribute the boxes in tot_pallets equally
-                elif boxes_per_pallets * remaining_pallets <= remaining_boxes:
-                    result[pallet_code_name][current_pallet_name] = boxes_per_pallets
-                    remaining_boxes -= boxes_per_pallets
-                    remaining_pallets -= 1
-
-                # If the value of boxes_per_pallets * tot_pallets > tot_boxes_ordered
-                # do the following
-                else:
-                    # If the current value of remaining_boxes // remaining_pallets
-                    # is not a multiple of the base of the pallet.
-                    if remaining_boxes // remaining_pallets % pallet_base_value:
-                        valid_boxes = helper_functions.get_multiples_of(
-                            number=pallet_base_value, multiple_start=remaining_boxes // remaining_pallets,
-                            multiple_limit=boxes_per_pallets
-                        )[0]
-                        result[pallet_code_name][current_pallet_name] = valid_boxes
-                        remaining_boxes -= valid_boxes
-                        remaining_pallets -= 1
-
-                    else:
-                        result[pallet_code_name][current_pallet_name] = remaining_boxes // remaining_pallets
-                        remaining_boxes -= remaining_boxes // remaining_pallets
-                        remaining_pallets -= 1
-
-            result_tuple = namedtuple('BoxDivision', ['box_division', 'remaining_boxes'])
-            helper_functions.update_json_content(
-                json_file_name='../app_info_json.json',
-                keys_values_to_update={'last_pallet_num': self.last_ped_num,
-                                       'last_pallet_letter': self.last_ped_alpha}
-            )
-            return result_tuple(result, remaining_boxes)
 
 
 class PedApi(QObject):
@@ -145,6 +61,11 @@ class PedApi(QObject):
         self._create_pallet_api_service()
         self.get_all_orders()
 
+    def place_boxes_on_pallets(self, current_logistic: str,
+                               boxes_per_pallets_info: dict):
+        current_log_orders = list(filter(lambda x: x[5] == current_logistic, self.all_orders))
+        return current_log_orders
+
     def construct_pallets(self):
         """ Constructs pallets by putting boxes on them. """
         db_reader = DatabaseCommunicator(read_from_db=True)
@@ -152,7 +73,14 @@ class PedApi(QObject):
         all_logs = self.get_all_logistics()
         # Start looping over the dict returned by get_all_logistics method
         for logistic, logistic_items in all_logs.items():
+
+            # logistic_items is a list of this kind
+            # [a string concatenation of logistic -- date of shipping -- client name,
+            # the corresponding channel of the logistic in question,
+            # the total num of boxes the logistic has]
+
             boxes = math.ceil(logistic_items[0])
+
             # Check to see if the current logistic is for Poland
             if logistic.split('--')[0].strip() in settings.POLAND_LOGISTICS:
                 suggested_pallets = db_reader.get_pallet_info_pl(
@@ -166,14 +94,22 @@ class PedApi(QObject):
                 )
             box_distributor_cls = Distributor()
             for pallet in suggested_pallets:
-                distributed_boxes = box_distributor_cls.box_distributor(
+                boxes_per_pallets = box_distributor_cls.box_distributor(
                     pallet_type=pallet,
                     boxes_per_pallets=suggested_pallets[pallet][1],
                     logistic_details=[logistic_items[1], logistic_items[2]],
                     tot_boxes_ordered=boxes,
                     tot_pallets=suggested_pallets[pallet][0]
                 )
-                boxes = distributed_boxes.remaining_boxes
+                boxes = boxes_per_pallets.remaining_boxes
+
+                # Pass the value of boxes_per_pallets to the function that places boxes
+                # on the pallets
+                box_placer = self.place_boxes_on_pallets(
+                    current_logistic=logistic,
+                    boxes_per_pallets_info=boxes_per_pallets
+                )
+                print(box_placer)
 
     def get_all_logistics(self) -> dict:
         """ Returns all logistics and there respective total boxes
