@@ -9,11 +9,13 @@ from PyQt5.QtWidgets import (QApplication, QLabel,
                              QMessageBox)
 
 from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread
 
 # Self defined modules
 from helper_modules import helper_functions
 import settings
+from api_communicator import PedApi
+from db_communicator import DatabaseCommunicator
 
 MSG_FONT = QFont('Italics', 13)
 BUTTONS_FONT = QFont('Times', 13)
@@ -50,7 +52,50 @@ class MainPage(QMainWindow):
         """ Connects widgets with their respective functions """
         self.g_sheet_link.textChanged.connect(self._link_label_responder)
         self.to_do_combo.activated.connect(self._combo_item_getter)
+        self.update_db_btn.clicked.connect(self._pallet_db_update)
         self.close_app_btn.clicked.connect(self._close_btn_responder)
+
+    def _pallet_db_update(self):
+        """ Responds to user's click on the button called Aggiornare DB.
+        It basically reads data from a Google Sheet and saves it in database (sqlite). """
+        db_class = DatabaseCommunicator()
+        check_pallet_table = db_class.check_table(settings.PALLET_INFO_TABLE)
+        if check_pallet_table:
+            custom_message = 'Sei sicuro di voler sovrascrivere i dati esistenti in database ? '
+            ask_user = helper_functions.ask_for_overwrite(
+                msg_box_font=MSG_FONT, window_tile=settings.WINDOW_TITLE,
+                custom_msg=custom_message)
+            # If user chooses to drop table
+            if ask_user == QMessageBox.Yes:
+                # Drop table
+                db_class.drop_table(settings.PALLET_INFO_TABLE)
+
+                db_update_class = PedApi()
+                # Then update it with new data.
+                update_req = db_update_class.get_pallet_range_data()
+                self._db_result_communicator(result=update_req)
+
+        else:
+            db_update_class = PedApi()
+            # Then update it with new data.
+            update_result = db_update_class.get_pallet_range_data()
+            self._db_result_communicator(result=update_result)
+
+    def _db_result_communicator(self, result: bool):
+        if result:
+            msg = 'Database aggiornato con successo!'
+            helper_functions.output_communicator(
+                msg_box_font=MSG_FONT, window_title=settings.WINDOW_TITLE,
+                custom_msg=msg, button_pressed=self.update_db_btn.text(),
+                output_type=True
+            )
+        else:
+            msg = 'Aggiornato database non riuscito!'
+            helper_functions.output_communicator(
+                msg_box_font=MSG_FONT, window_title=settings.WINDOW_TITLE,
+                custom_msg=msg, button_pressed=self.update_db_btn.text(),
+                output_type=False
+            )
 
     def _combo_item_getter(self):
         """ Gets ComboBox widget current item translating its value. """
