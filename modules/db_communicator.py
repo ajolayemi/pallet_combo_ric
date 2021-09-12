@@ -64,15 +64,27 @@ class DatabaseCommunicator:
         self.con_error = False
         self.connection = None
 
-    def check_table(self, table_name):
-        """ Returns True if the said table is empty,
+    def drop_table(self, table_name: str) -> bool:
+        """ Drops table.
+         Returns True if the drop request was successful, False otherwise"""
+        delete_query = QSqlQuery(self.connection)
+        delete_query.exec_(f'DROP TABLE Pallets')
+        if delete_query.isActive():
+            return True
+        else:
+            return False
+
+    def check_table(self, table_name) -> bool:
+        """ Returns True if the said table is not empty,
         False otherwise. """
         check_query = QSqlQuery(self.connection)
         query = f'SELECT * FROM {table_name}'
         check_query.exec_(query)
         empty_table = check_query.first()
         check_query.finish()
-        return not empty_table
+        # Empty table value is False if table is empty
+        # it is True if it isn't
+        return empty_table
 
     def get_pallet_info_pl(self, total_boxes: int):
         """ Returns the suggested pallet combination necessary for the
