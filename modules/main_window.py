@@ -55,6 +55,14 @@ class MainPage(QMainWindow):
         self.update_db_btn.clicked.connect(self._pallet_db_update)
         self.close_app_btn.clicked.connect(self._close_btn_responder)
 
+    def _update_while_busy(self):
+        """ Updated the GUI state while it's busy building pallets. """
+        self.g_sheet_link.setEnabled(False)
+        self.to_do_combo.setEnabled(False)
+        self.update_db_btn.setEnabled(False)
+        self.combine_pallet_btn.setEnabled(False)
+        self.close_app_btn.setEnabled(False)
+
     def _pallet_db_update(self):
         """ Responds to user's click on the button called Aggiornare DB.
         It basically reads data from a Google Sheet and saves it in database (sqlite). """
@@ -136,6 +144,8 @@ class MainPage(QMainWindow):
 
     def _set_initial_state(self):
         """ Sets the initial state of the GUI by enabling some widgets. """
+        self.g_sheet_link.clear()
+        self.to_do_combo.setCurrentIndex(0)
         self.combine_pallet_btn.setEnabled(False)
         self.to_do_combo.setEnabled(False)
 
