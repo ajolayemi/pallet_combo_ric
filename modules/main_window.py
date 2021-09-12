@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QLabel,
                              QMessageBox)
 
 from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt
 
 # Self defined modules
 from helper_modules import helper_functions
@@ -43,11 +44,23 @@ class MainPage(QMainWindow):
         self._connect_signals_slots()
 
         self.google_sheet_link = None
+        self.overwrite_data_in_sheet = True
 
     def _connect_signals_slots(self):
         """ Connects widgets with their respective functions """
         self.g_sheet_link.textChanged.connect(self._link_label_responder)
+        self.to_do_combo.activated.connect(self._combo_item_getter)
         self.close_app_btn.clicked.connect(self._close_btn_responder)
+
+    def _combo_item_getter(self):
+        """ Gets ComboBox widget current item translating its value. """
+        value_dict = {
+            settings.TO_DO_COMBO_ITEMS[0]: True,
+            settings.TO_DO_COMBO_ITEMS[1]: False
+        }
+
+        if self.to_do_combo.currentText():
+            self.overwrite_data_in_sheet = value_dict[self.to_do_combo.currentText()]
 
     def _close_btn_responder(self):
         """ Responds to user's click on the button named 'Chiudi' """
