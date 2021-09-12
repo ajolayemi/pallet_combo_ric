@@ -1,18 +1,15 @@
 #!/usr/bin/env python
 import sys
 
-from PyQt5.QtWidgets import (QApplication, QLabel,
-                             QWidget, QFormLayout,
-                             QMainWindow, QPushButton,
-                             QComboBox, QLineEdit,
-                             QVBoxLayout, QGridLayout,
-                             QMessageBox)
-
+from PyQt5.QtCore import QThread
 from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt, QThread
-
+from PyQt5.QtWidgets import (QApplication, QLabel,
+                             QWidget, QMainWindow, QPushButton,
+                             QComboBox, QLineEdit, QGridLayout,
+                             QMessageBox)
 # Self defined modules
 from helper_modules import helper_functions
+
 import settings
 from api_communicator import PedApi
 from db_communicator import DatabaseCommunicator

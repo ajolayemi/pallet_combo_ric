@@ -3,18 +3,17 @@
 """ Communicates with google sheets using Google Sheet API both reading and writing data to
 the sheets. """
 import math
-import string
 import re
+
 from PyQt5.QtCore import pyqtSignal, QObject
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from collections import namedtuple
+from helper_modules import helper_functions
 
 # Self defined modules
 import settings
-from helper_modules import helper_functions
-from db_communicator import DatabaseCommunicator
 from box_distributor import Distributor
+from db_communicator import DatabaseCommunicator
 
 API_INFO_JSON_CONTENTS = helper_functions.json_file_loader(
     file_name=settings.INFORMATION_JSON
