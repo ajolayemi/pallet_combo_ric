@@ -170,7 +170,7 @@ class MainPage(QMainWindow):
                 output_type=True
             )
         else:
-            msg = 'Aggiornato database non riuscito!'
+            msg = 'Aggiornamento database non riuscito!'
             helper_functions.output_communicator(
                 msg_box_font=MSG_FONT, window_title=settings.WINDOW_TITLE,
                 custom_msg=msg, button_pressed=self.update_db_btn.text(),
