@@ -27,8 +27,6 @@ class PedApi(QObject):
     started = pyqtSignal(str)
     finished = pyqtSignal(str)
     unfinished = pyqtSignal(str)
-    db_updated = pyqtSignal(str)
-    db_not_updated = pyqtSignal(str)
 
     processed_orders = []
 
@@ -315,10 +313,7 @@ class PedApi(QObject):
             write_result = db_writer_class.write_to_pallet_table(
                 info_to_write=data
             )
-        if write_result:
-            self.db_updated.emit('Database aggiornato con successo')
-        else:
-            self.db_not_updated.emit('Aggiornamento di database non riuscito')
+        return write_result is not None
 
     def _create_pallet_api_service(self):
         self.api_service = build('sheets', 'v4', credentials=self.api_creds)
