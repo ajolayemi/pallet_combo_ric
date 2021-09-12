@@ -118,16 +118,15 @@ class PedApi(QObject):
         boxes_per_pallets_info_copy = boxes_per_pallets_info['result'][pallet_code_name].copy()
 
         # Get all the order related to the current client
-        current_log_orders = list(filter(lambda x: x[5] == current_logistic and x[1] not in PedApi.processed_orders
+        current_log_orders = list(filter(lambda x: x[5] == current_logistic and x[0] not in PedApi.processed_orders
                                          , self.all_orders))
         if current_log_orders:
             for current_order in current_log_orders:
-                product_ordered_id = current_order[1]
+                product_ordered_code = current_order[0]
 
-                if product_ordered_id in PedApi.processed_orders:
+                if product_ordered_code in PedApi.processed_orders:
                     continue
 
-                product_ordered_code = current_order[0]
                 qta_ordered = int(current_order[2])
                 product_pallet_ratio = float(helper_functions.name_controller(
                     name=current_order[-1], char_to_remove=',',
@@ -147,8 +146,6 @@ class PedApi(QObject):
                     # If qta_remaining == 0, i.e all the qta ordered for the current product
                     # has been placed on the pallet
                     if qta_remaining == 0:
-                        # Remove the already processed order from the list of orders
-                        PedApi.processed_orders.append(product_ordered_id)
                         # Break the loop that loops over pallets
                         break
 
@@ -167,6 +164,8 @@ class PedApi(QObject):
                         qta_remaining = int(qta_ordered - product_qta_on_pallet)
                         boxes_info[pallet_full_name] -= product_pallet_ratio
 
+                        PedApi.processed_orders.append(product_ordered_code)
+
                     # Elif product_pallet_ratio > pallet_current_capacity
                     elif product_pallet_ratio > pallet_current_capacity:
 
@@ -177,7 +176,9 @@ class PedApi(QObject):
                             (pallet_current_capacity / pallet_initial_capacity) * product_pallet_ratio
                         )
                         if possible_product_qta <= 0:
-                            continue
+                            # Break the current loop and go over to the next
+                            # product
+                            break
                         else:
                             product_qta_on_pallet += possible_product_qta
                             qta_remaining = qta_ordered - product_qta_on_pallet
@@ -186,6 +187,8 @@ class PedApi(QObject):
                                                                   * pallet_initial_capacity)
                             self.final_data.append([product_ordered_code, product_qta_on_pallet, pallet_full_name,
                                                     pallet_code_name])
+                            if qta_remaining == 0:
+                                PedApi.processed_orders.append(product_ordered_code)
 
     def construct_pallets(self):
         """ Constructs pallets by putting boxes on them. """
