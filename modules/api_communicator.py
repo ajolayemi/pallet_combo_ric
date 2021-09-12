@@ -27,6 +27,7 @@ class PedApi(QObject):
     started = pyqtSignal(str)
     finished = pyqtSignal(str)
     unfinished = pyqtSignal(str)
+    empty_orders = pyqtSignal(str)
 
     processed_orders = []
 
@@ -45,15 +46,13 @@ class PedApi(QObject):
             self.api_key_file, scopes=self.scopes
         )
 
-        if self.for_pallet:
-
-            # Google SpreadSheets Info
-            self.order_spreadsheet_id = helper_functions.get_sheet_id(
-                google_sheet_link=order_spreadsheet
-            )
-            self.order_sheet_range_to_read = API_INFO_JSON_CONTENTS.get('order_range_sheet_read')
-            self.order_sheet_range_to_clear = API_INFO_JSON_CONTENTS.get('order_range_sheet_to_be_cleared')
-            self.order_sheet_range_to_write = None
+        # Google SpreadSheets Info
+        self.order_spreadsheet_id = helper_functions.get_sheet_id(
+            google_sheet_link=order_spreadsheet
+        )
+        self.order_sheet_range_to_read = API_INFO_JSON_CONTENTS.get('order_range_sheet_read')
+        self.order_sheet_range_to_clear = API_INFO_JSON_CONTENTS.get('order_range_sheet_to_be_cleared')
+        self.order_sheet_range_to_write = None
 
         self.pallet_info_sheet_link = API_INFO_JSON_CONTENTS.get('pallet_range_sheet_link')
         self.pallet_info_sheet_id = helper_functions.get_sheet_id(
@@ -66,15 +65,13 @@ class PedApi(QObject):
 
         self._create_pallet_api_service()
 
-        if self.for_pallet:
-            self.all_orders = []
+        self.all_orders = []
 
-            # Saves the final data that will be written to google sheet
-            self.final_data = []
-            # Call on the  method that updates the value of the previous
-            #  attribute
-            self.update_sheet_writing_range()
-            self.get_all_orders()
+        # Saves the final data that will be written to google sheet
+        self.final_data = []
+
+        self.update_sheet_writing_range()
+        self.get_all_orders()
 
     def write_data_to_google_sheet(self):
         write_request = self.api_service.spreadsheets().values().append(
@@ -210,70 +207,75 @@ class PedApi(QObject):
 
     def construct_pallets(self):
         """ Constructs pallets by putting boxes on them. """
-        db_reader = DatabaseCommunicator(read_from_db=True)
-        # Get all logistics and the total number of boxes each of them has
-        all_logs = self.get_all_logistics()
-        # Start looping over the dict returned by get_all_logistics method
-        for logistic, logistic_items in all_logs.items():
-
-            # logistic_items is a list of this kind
-            # [a string concatenation of logistic -- date of shipping -- client name,
-            # the corresponding channel of the logistic in question,
-            # the total num of boxes the logistic has]
-
-            boxes = math.ceil(logistic_items[0])
-
-            # Check to see if the current logistic is for Poland
-            if logistic.split('--')[0].strip() in settings.POLAND_LOGISTICS:
-                suggested_pallets = db_reader.get_pallet_info_pl(
-                    total_boxes=boxes
-                )
-            else:
-                # Pass the total number of boxes each logistics has to the function that suggests
-                # pallets
-                suggested_pallets = db_reader.get_pallet_info(
-                    total_boxes=boxes
-                )
-            box_distributor_cls = Distributor()
-            for pallet in suggested_pallets:
-                boxes_per_pallets = box_distributor_cls.box_distributor(
-                    pallet_type=pallet,
-                    boxes_per_pallets=suggested_pallets[pallet][1],
-                    logistic_details=[logistic_items[1], logistic_items[2]],
-                    tot_boxes_ordered=boxes,
-                    tot_pallets=suggested_pallets[pallet][0]
-                )
-                boxes = boxes_per_pallets['remaining_boxes']
-
-                # Pass the value of boxes_per_pallets to the function that places boxes
-                # on the pallets
-                self.place_boxes_on_pallets(
-                    current_logistic=logistic,
-                    boxes_per_pallets_info=boxes_per_pallets,
-                    pallet_type=pallet
-                )
-
-        # write the final data
-        write_request_response = self.write_data_to_google_sheet()
-
-        # If the data writing request was successful
-        if write_request_response:
-            self.finished.emit('Ho finito di comporre le pedane!')
-            # Update the writing range
-            updated_range = write_request_response.get('updates').get('updatedRange')
-            last_range = int(re.search(re.compile(r'\d+'), updated_range.split(':')[-1]).group()) + 1
-            helper_functions.update_json_content(
-                json_file_name=settings.INFORMATION_JSON,
-                keys_values_to_update={'order_range_sheet_for_writing': f'{settings.GOOGLE_SHEET_INITIAL_WRITING_RANGE}'
-                                                                        f'{last_range}'}
-            )
+        self.started.emit('Started constructing pallet')
+        # If there is no order
+        if not self.all_orders:
+            self.empty_orders.emit('Nessun ordine in manuale!')
         else:
-            self.unfinished.emit("C'è stato un errore durante la composizione delle pedane")
-            # Clear any data written in google sheet
-            self.api_service.spreadsheets().values().batchClear(
-                spreadsheetId=self.order_spreadsheet_id,
-                body={'ranges': self.order_sheet_range_to_clear}
-            ).execute()
+            db_reader = DatabaseCommunicator(read_from_db=True)
+            # Get all logistics and the total number of boxes each of them has
+            all_logs = self.get_all_logistics()
+            # Start looping over the dict returned by get_all_logistics method
+            for logistic, logistic_items in all_logs.items():
+
+                # logistic_items is a list of this kind
+                # [a string concatenation of logistic -- date of shipping -- client name,
+                # the corresponding channel of the logistic in question,
+                # the total num of boxes the logistic has]
+
+                boxes = math.ceil(logistic_items[0])
+
+                # Check to see if the current logistic is for Poland
+                if logistic.split('--')[0].strip() in settings.POLAND_LOGISTICS:
+                    suggested_pallets = db_reader.get_pallet_info_pl(
+                        total_boxes=boxes
+                    )
+                else:
+                    # Pass the total number of boxes each logistics has to the function that suggests
+                    # pallets
+                    suggested_pallets = db_reader.get_pallet_info(
+                        total_boxes=boxes
+                    )
+                box_distributor_cls = Distributor()
+                for pallet in suggested_pallets:
+                    boxes_per_pallets = box_distributor_cls.box_distributor(
+                        pallet_type=pallet,
+                        boxes_per_pallets=suggested_pallets[pallet][1],
+                        logistic_details=[logistic_items[1], logistic_items[2]],
+                        tot_boxes_ordered=boxes,
+                        tot_pallets=suggested_pallets[pallet][0]
+                    )
+                    boxes = boxes_per_pallets['remaining_boxes']
+
+                    # Pass the value of boxes_per_pallets to the function that places boxes
+                    # on the pallets
+                    self.place_boxes_on_pallets(
+                        current_logistic=logistic,
+                        boxes_per_pallets_info=boxes_per_pallets,
+                        pallet_type=pallet
+                    )
+
+            # write the final data
+            write_request_response = self.write_data_to_google_sheet()
+
+            # If the data writing request was successful
+            if write_request_response:
+                self.finished.emit('Ho finito di comporre le pedane!')
+                # Update the writing range
+                updated_range = write_request_response.get('updates').get('updatedRange')
+                last_range = int(re.search(re.compile(r'\d+'), updated_range.split(':')[-1]).group()) + 1
+                helper_functions.update_json_content(
+                    json_file_name=settings.INFORMATION_JSON,
+                    keys_values_to_update={
+                        'order_range_sheet_for_writing': f'{settings.GOOGLE_SHEET_INITIAL_WRITING_RANGE}'
+                                                         f'{last_range}'})
+            else:
+                self.unfinished.emit("C'è stato un errore durante la composizione delle pedane")
+                # Clear any data written in google sheet
+                self.api_service.spreadsheets().values().batchClear(
+                    spreadsheetId=self.order_spreadsheet_id,
+                    body={'ranges': self.order_sheet_range_to_clear}
+                ).execute()
 
     def get_all_logistics(self) -> dict:
         """ Returns all logistics and there respective total boxes

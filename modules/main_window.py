@@ -51,9 +51,81 @@ class MainPage(QMainWindow):
     def _connect_signals_slots(self):
         """ Connects widgets with their respective functions """
         self.g_sheet_link.textChanged.connect(self._link_label_responder)
-        self.to_do_combo.activated.connect(self._combo_item_getter)
+        self.to_do_combo.currentIndexChanged.connect(self._combo_item_getter)
         self.update_db_btn.clicked.connect(self._pallet_db_update)
+        self.combine_pallet_btn.clicked.connect(self._pallet_combiner)
         self.close_app_btn.clicked.connect(self._close_btn_responder)
+
+    def _pallet_combiner(self):
+        """ Responds to user click on the button named Comporre Button. """
+        if self.overwrite_data_in_sheet:
+            warning_msg = 'Procedendo, questa operazione sovrascriverà i dati già esistenti in manuale.\n' \
+                          'Se non vuoi procedere, clicca su "No" e selezionare "No" nella riga precedente.\n' \
+                          'Clicca su "Yes" in caso volessi procedere. '
+            ask_user = helper_functions.ask_for_overwrite(
+                msg_box_font=MSG_FONT, window_tile=settings.WINDOW_TITLE,
+                custom_msg=warning_msg
+            )
+        else:
+            msg = "Sei sicuro di voler procedere ?"
+            ask_user = helper_functions.ask_for_overwrite(
+                msg_box_font=MSG_FONT, window_tile=settings.WINDOW_TITLE,
+                custom_msg=msg
+            )
+
+        if ask_user == QMessageBox.Yes:
+            self.pallet_thread = QThread()
+
+            self.pallet_api_cls = PedApi(order_spreadsheet=self.google_sheet_link,
+                                         for_pallets=True,
+                                         overwrite_data=self.overwrite_data_in_sheet)
+
+            # Move thread
+            self.pallet_api_cls.moveToThread(self.pallet_thread)
+
+            # Connect this thread and the function that constructs pallets
+            self.pallet_thread.started.connect(
+                self.pallet_api_cls.construct_pallets
+            )
+
+            # Update app's state
+            self.pallet_api_cls.started.connect(self._update_while_busy)
+            self.pallet_api_cls.finished.connect(self._update_after_done)
+            self.pallet_api_cls.unfinished.connect(self._update_after_done)
+            self.pallet_api_cls.empty_orders.connect(self._update_after_done)
+            self.pallet_api_cls.finished.connect(self._communicate_pallet_success_outcome)
+            self.pallet_api_cls.unfinished.connect(self._communicate_pallet_error_outcome)
+            self.pallet_api_cls.empty_orders.connect(self._communicate_pallet_error_outcome)
+
+            # Do clean up
+            self.pallet_api_cls.finished.connect(self.pallet_thread.quit)
+            self.pallet_api_cls.unfinished.connect(self.pallet_thread.quit)
+            self.pallet_api_cls.empty_orders.connect(self.pallet_thread.quit)
+            self.pallet_api_cls.finished.connect(self.pallet_thread.deleteLater)
+            self.pallet_api_cls.unfinished.connect(self.pallet_thread.deleteLater)
+            self.pallet_api_cls.empty_orders.connect(self.pallet_thread.deleteLater)
+
+            # Start thread
+            self.pallet_thread.start()
+
+    def _communicate_pallet_error_outcome(self, msg):
+        helper_functions.output_communicator(
+            msg_box_font=MSG_FONT, window_title=settings.WINDOW_TITLE,
+            output_type=False, custom_msg=msg, button_pressed=self.combine_pallet_btn.text()
+        )
+
+    def _communicate_pallet_success_outcome(self, msg):
+        helper_functions.output_communicator(
+            msg_box_font=MSG_FONT, button_pressed=self.combine_pallet_btn.text(),
+            output_type=True, window_title=settings.WINDOW_TITLE, custom_msg=msg
+        )
+
+    def _update_after_done(self):
+        """ Updates app's state when it's done combining pallets. """
+        self.g_sheet_link.clear()
+        self.g_sheet_link.setEnabled(True)
+        self.update_db_btn.setEnabled(True)
+        self.close_app_btn.setEnabled(True)
 
     def _update_while_busy(self):
         """ Updated the GUI state while it's busy building pallets. """
