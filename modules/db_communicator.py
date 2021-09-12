@@ -5,10 +5,10 @@ information needed in this project. """
 
 
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
+from helper_modules import helper_functions
 
 # self defined modules
 import settings
-from helper_modules import helper_functions
 
 
 def determine_max_per_pallet(pallet_name: str, tot_pallet: int, total_boxes_ordered: int):
@@ -67,6 +67,8 @@ class DatabaseCommunicator:
     def drop_table(self, table_name: str) -> bool:
         """ Drops table.
          Returns True if the drop request was successful, False otherwise"""
+        if not self.connection:
+            self.create_connection()
         delete_query = QSqlQuery(self.connection)
         delete_query.exec_(f'DROP TABLE Pallets')
         if delete_query.isActive():
@@ -77,14 +79,20 @@ class DatabaseCommunicator:
     def check_table(self, table_name) -> bool:
         """ Returns True if the said table is not empty,
         False otherwise. """
+        if not self.connection:
+            self.create_connection()
         check_query = QSqlQuery(self.connection)
-        query = f'SELECT * FROM {table_name}'
+        query = f'SELECT Max_Value FROM Pallets'
         check_query.exec_(query)
-        empty_table = check_query.first()
+        check_query.first()
+        record_check = check_query.value(
+            check_query.record().indexOf(
+                "Max_Value"
+            )
+        )
+
         check_query.finish()
-        # Empty table value is False if table is empty
-        # it is True if it isn't
-        return empty_table
+        return record_check is not None
 
     def get_pallet_info_pl(self, total_boxes: int):
         """ Returns the suggested pallet combination necessary for the
