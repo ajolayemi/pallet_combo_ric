@@ -64,9 +64,14 @@ class MainPage(QMainWindow):
         """ Keeps track of when user enter or does not enter a link
         in the line edit widget labeled 'Link' """
         if self.g_sheet_link.text():
-            self.to_do_combo.setEnabled(True)
-            self.combine_pallet_btn.setEnabled(True)
-            self.google_sheet_link = self.g_sheet_link.text()
+            # Check to see that user has entered a valid link
+            valid_link = helper_functions.get_sheet_id(
+                google_sheet_link=self.g_sheet_link.text()
+            )
+            if valid_link:
+                self.to_do_combo.setEnabled(True)
+                self.combine_pallet_btn.setEnabled(True)
+                self.google_sheet_link = self.g_sheet_link.text()
         else:
             self.to_do_combo.setEnabled(False)
             self.combine_pallet_btn.setEnabled(False)
