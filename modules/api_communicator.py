@@ -85,7 +85,7 @@ class PedApi(QObject):
 
     def update_sheet_writing_range(self):
         """ Clears the existing data in google sheet.
-        Updates the range for data writing. """
+        Updates the range for data writing, last pallet_num and last pallet alpha. """
         if self.overwrite_data:
             # Clear existing data in google sheet
             self.api_service.spreadsheets().values().batchClear(
@@ -97,7 +97,10 @@ class PedApi(QObject):
             helper_functions.update_json_content(
                 json_file_name=settings.INFORMATION_JSON,
                 keys_values_to_update={
-                    'order_range_sheet_for_writing': f'{settings.GOOGLE_SHEET_INITIAL_WRITING_RANGE}2'}
+                    'order_range_sheet_for_writing': f'{settings.GOOGLE_SHEET_INITIAL_WRITING_RANGE}2',
+                    'last_pallet_num': 0,
+                    'last_pallet_letter': ''
+                }
             )
         else:
             pass
@@ -117,44 +120,41 @@ class PedApi(QObject):
         # boxes_per_pallets_info
         boxes_per_pallets_info_copy = boxes_per_pallets_info['result'][pallet_code_name].copy()
 
-        # Get all the order related to the current client
-        current_log_orders = list(filter(lambda x: x[5] == current_logistic and x[0] not in PedApi.processed_orders
-                                         , self.all_orders))
-        if current_log_orders:
-            for current_order in current_log_orders:
-                product_ordered_code = current_order[0]
+        # Start looping over the boxes_per_pallets_info parameter
+        # it is a named tuple containing dicts
+        boxes_info = boxes_per_pallets_info['result'].get(pallet_code_name)
 
-                if product_ordered_code in PedApi.processed_orders:
-                    continue
+        for pallet_full_name, pallet_current_capacity in boxes_info.items():
 
-                qta_ordered = int(current_order[2])
-                product_pallet_ratio = float(helper_functions.name_controller(
-                    name=current_order[-1], char_to_remove=',',
-                    new_char='.'
-                ))
-
-                # Keep track of the qtà of the current product that is on pallet
-                product_qta_on_pallet = 0
-
-                qta_remaining = int(qta_ordered - product_qta_on_pallet)
-
-                # Start looping over the boxes_per_pallets_info parameter
-                # it is a named tuple containing dicts
-                boxes_info = boxes_per_pallets_info['result'].get(pallet_code_name)
-
-                for pallet_full_name, pallet_current_capacity in boxes_info.items():
-                    # If qta_remaining == 0, i.e all the qta ordered for the current product
-                    # has been placed on the pallet
-                    if qta_remaining == 0:
-                        # Break the loop that loops over pallets
+            pallet_cap = pallet_current_capacity
+            # Get all the order related to the current client
+            current_log_orders = list(filter(lambda x: x[5] == current_logistic and x[0] not in PedApi.processed_orders,
+                                             self.all_orders))
+            if current_log_orders:
+                for current_order in current_log_orders:
+                    if pallet_cap <= 0:
                         break
+                    product_ordered_code = current_order[0]
 
-                    # If the current pallet capacity is 0, i.e no more space
-                    if pallet_current_capacity <= 0:
+                    if product_ordered_code in PedApi.processed_orders:
                         continue
 
+                    qta_ordered = int(current_order[2])
+                    product_pallet_ratio = float(helper_functions.name_controller(
+                        name=str(current_order[-1]), char_to_remove=',',
+                        new_char='.'
+                    ))
+
+                    # Keep track of the qtà of the current product that is on pallet
+                    product_qta_on_pallet = 0
+
+                    qta_remaining = int(qta_ordered - product_qta_on_pallet)
+
+                    if qta_remaining == 0:
+                        # continue to the next product
+                        continue
                     # If the current product_pallet_ratio is <= current pallet_current_capacity
-                    if product_pallet_ratio <= pallet_current_capacity:
+                    if product_pallet_ratio <= round(pallet_cap):
                         data_to_append = [product_ordered_code, qta_remaining, pallet_full_name,
                                           pallet_code_name]
                         self.final_data.append(data_to_append)
@@ -162,33 +162,47 @@ class PedApi(QObject):
                         # Update some values
                         product_qta_on_pallet += qta_remaining
                         qta_remaining = int(qta_ordered - product_qta_on_pallet)
-                        boxes_info[pallet_full_name] -= product_pallet_ratio
+                        pallet_cap -= product_pallet_ratio
 
                         PedApi.processed_orders.append(product_ordered_code)
+                        # Remove the current order from the list of orders
+                        self.all_orders.remove(current_order)
 
                     # Elif product_pallet_ratio > pallet_current_capacity
-                    elif product_pallet_ratio > pallet_current_capacity:
+                    elif product_pallet_ratio > round(pallet_cap):
 
                         # Access the initial capacity of the current pallet
                         pallet_initial_capacity = boxes_per_pallets_info_copy.get(pallet_full_name)
 
                         possible_product_qta = round(
-                            (pallet_current_capacity / pallet_initial_capacity) * product_pallet_ratio
+                            (round(pallet_cap) / pallet_initial_capacity) * product_pallet_ratio
                         )
+
+                        # Do not put the current box on the pallet if it's possible quantity is <= 0
                         if possible_product_qta <= 0:
-                            # Break the current loop and go over to the next
-                            # product
-                            break
+                            # Continue to the next product
+                            continue
                         else:
                             product_qta_on_pallet += possible_product_qta
                             qta_remaining = qta_ordered - product_qta_on_pallet
 
-                            boxes_info[pallet_full_name] -= round((possible_product_qta / product_pallet_ratio)
-                                                                  * pallet_initial_capacity)
-                            self.final_data.append([product_ordered_code, product_qta_on_pallet, pallet_full_name,
+                            occupied_ratio = int(round((possible_product_qta / product_pallet_ratio)
+                                                       * pallet_initial_capacity))
+                            pallet_cap -= occupied_ratio
+                            self.final_data.append([product_ordered_code, possible_product_qta, pallet_full_name,
                                                     pallet_code_name])
+
                             if qta_remaining == 0:
                                 PedApi.processed_orders.append(product_ordered_code)
+                                self.all_orders.remove(current_order)
+                            else:
+                                # Modify the quantity of the current product
+                                self.all_orders[self.all_orders.index(current_order)][2] = int(
+                                    self.all_orders[self.all_orders.index(current_order)][2]) - possible_product_qta
+
+                                # Modify the ratio of the current product
+                                self.all_orders[self.all_orders.index(current_order)][-1] =\
+                                    int(self.all_orders[self.all_orders.index(current_order)][-1]) - occupied_ratio
 
     def construct_pallets(self):
         """ Constructs pallets by putting boxes on them. """
