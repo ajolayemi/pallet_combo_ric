@@ -32,10 +32,14 @@ class PedApi(QObject):
 
     processed_orders = []
 
-    def __init__(self, order_spreadsheet: str, overwrite_data: bool):
+    def __init__(self, order_spreadsheet: str = None, overwrite_data: bool = True,
+                 for_pallets: bool = False):
         super(PedApi, self).__init__()
 
         self.overwrite_data = overwrite_data
+        # This is use to minimize the number of time google sheet
+        # API is called to read data
+        self.for_pallet = for_pallets
 
         self.scopes = ['https://www.googleapis.com/auth/spreadsheets']
         self.api_key_file = API_INFO_JSON_CONTENTS.get('api_key_file_name')
@@ -43,13 +47,15 @@ class PedApi(QObject):
             self.api_key_file, scopes=self.scopes
         )
 
-        # Google SpreadSheets Info
-        self.order_spreadsheet_id = helper_functions.get_sheet_id(
-            google_sheet_link=order_spreadsheet
-        )
-        self.order_sheet_range_to_read = API_INFO_JSON_CONTENTS.get('order_range_sheet_read')
-        self.order_sheet_range_to_clear = API_INFO_JSON_CONTENTS.get('order_range_sheet_to_be_cleared')
-        self.order_sheet_range_to_write = None
+        if self.for_pallet:
+
+            # Google SpreadSheets Info
+            self.order_spreadsheet_id = helper_functions.get_sheet_id(
+                google_sheet_link=order_spreadsheet
+            )
+            self.order_sheet_range_to_read = API_INFO_JSON_CONTENTS.get('order_range_sheet_read')
+            self.order_sheet_range_to_clear = API_INFO_JSON_CONTENTS.get('order_range_sheet_to_be_cleared')
+            self.order_sheet_range_to_write = None
 
         self.pallet_info_sheet_link = API_INFO_JSON_CONTENTS.get('pallet_range_sheet_link')
         self.pallet_info_sheet_id = helper_functions.get_sheet_id(
@@ -60,17 +66,17 @@ class PedApi(QObject):
         self.api_service = None
         self.sheet_api = None
 
-        self.all_orders = []
-
-        # Saves the final data that will be written to google sheet
-        self.final_data = []
-
         self._create_pallet_api_service()
 
-        # Call on the  method that updates the value of the previous
-        #  attribute
-        self.update_sheet_writing_range()
-        self.get_all_orders()
+        if self.for_pallet:
+            self.all_orders = []
+
+            # Saves the final data that will be written to google sheet
+            self.final_data = []
+            # Call on the  method that updates the value of the previous
+            #  attribute
+            self.update_sheet_writing_range()
+            self.get_all_orders()
 
     def write_data_to_google_sheet(self):
         write_request = self.api_service.spreadsheets().values().append(
@@ -260,8 +266,8 @@ class PedApi(QObject):
             last_range = int(re.search(re.compile(r'\d+'), updated_range.split(':')[-1]).group()) + 1
             helper_functions.update_json_content(
                 json_file_name=settings.INFORMATION_JSON,
-                keys_values_to_update={'order_range_sheet_for_writing'
-                                       : f'{settings.GOOGLE_SHEET_INITIAL_WRITING_RANGE}{last_range}'}
+                keys_values_to_update={'order_range_sheet_for_writing': f'{settings.GOOGLE_SHEET_INITIAL_WRITING_RANGE}'
+                                                                        f'{last_range}'}
             )
         else:
             self.unfinished.emit("C'è stato un errore durante la composizione delle pedane")
