@@ -64,6 +64,16 @@ class DatabaseCommunicator:
         self.con_error = False
         self.connection = None
 
+    def check_table(self, table_name):
+        """ Returns True if the said table is empty,
+        False otherwise. """
+        check_query = QSqlQuery(self.connection)
+        query = f'SELECT * FROM {table_name}'
+        check_query.exec_(query)
+        empty_table = check_query.first()
+        check_query.finish()
+        return not empty_table
+
     def get_pallet_info_pl(self, total_boxes: int):
         """ Returns the suggested pallet combination necessary for the
         total_boxes entered for all logistics that are for Poland """
