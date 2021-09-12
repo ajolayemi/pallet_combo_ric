@@ -31,7 +31,7 @@ class MainPage(QMainWindow):
         self.resize(300, 120)
         self.central_wid = QWidget()
 
-        self.win_layout = QVBoxLayout()
+        self.win_layout = QGridLayout()
 
         self.central_wid.setLayout(self.win_layout)
 
@@ -83,14 +83,14 @@ class MainPage(QMainWindow):
 
         self.btns_lbl = '<b> --- </b>'
 
-        self.g_sheet_link_lbl = QLabel('Link : ')
+        self.g_sheet_link_lbl = QLabel('Link foglio google: ')
         self.g_sheet_link = QLineEdit()
         self.g_sheet_link.setPlaceholderText(f'link {settings.GOOGLE_SHEET_WB_NAME}')
         self.g_sheet_link.setFont(QFont('Italics', 13))
         self.g_sheet_link_lbl.setFont(QFont('Italics', 16))
 
         self.to_do_combo = QComboBox()
-        self.to_do_combo_lbl = QLabel('Nuovo ? ')
+        self.to_do_combo_lbl = QLabel('Sovrascrivere dati esistenti ? ')
         self.to_do_combo.addItems(settings.TO_DO_COMBO_ITEMS)
         self.to_do_combo_lbl.setFont(QFont('Italics', 16))
         self.to_do_combo.setFont(MSG_FONT)
@@ -106,20 +106,14 @@ class MainPage(QMainWindow):
         self.close_app_btn.setFont(BUTTONS_FONT)
         self.close_app_btn.setStyleSheet('color: red')
 
-        buttons_list = [self.update_db_btn, self.combine_pallet_btn, self.close_app_btn]
+        widgets = [self.g_sheet_link_lbl, self.g_sheet_link,
+                   self.to_do_combo_lbl, self.to_do_combo,
+                   self.combine_pallet_btn, self.update_db_btn,
+                   self.close_app_btn]
 
-        self.form_layout = QFormLayout()
-        self.btn_layout = QGridLayout()
-
-        self.form_layout.addRow(self.g_sheet_link_lbl, self.g_sheet_link)
-        self.form_layout.addRow(self.to_do_combo_lbl, self.to_do_combo)
-
-        for button in buttons_list:
-
-            self.btn_layout.addWidget(button)
-
-        self.win_layout.addLayout(self.form_layout)
-        self.win_layout.addLayout(self.btn_layout)
+        for wid in widgets:
+            self.win_layout.addWidget(wid)
+            self.win_layout.setSpacing(5)
 
 
 def main():
