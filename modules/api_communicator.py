@@ -319,8 +319,16 @@ class PedApi(QObject):
                     )
                     boxes = boxes_per_pallets['remaining_boxes']
 
-                    # Pass the value of boxes_per_pallets to the function that places boxes
+                    # Pass the value of boxes_per_pallets to the functions that places boxes
                     # on the pallets
+                    # If the current channel is ALV
+                    if logistic_items[1] == settings.ALV_CHANNEL_CODE:
+                        self.place_boxes_on_pallets_alv(
+                            current_logistic=logistic,
+                            boxes_per_pallets_info=boxes_per_pallets,
+                            pallet_type=pallet
+                        )
+
                     self.place_boxes_on_pallets(
                         current_logistic=logistic,
                         boxes_per_pallets_info=boxes_per_pallets,
