@@ -125,6 +125,12 @@ class PedApi(QObject):
         for pallet_full_name, pallet_capacity in boxes_info.items():
             pallet_current_capacity = pallet_capacity
 
+    def get_client_order(self, client_order_num: str):
+        """ Returns a nested list of all orders pertaining to a certain client
+        with client_order_num. """
+        return list(filter(lambda x: x[7] == client_order_num and x[0] not in PedApi.processed_orders,
+                           self.all_orders))
+
     def get_logistic_clients(self, logistic: str) -> dict[str, float]:
         """ Gets all clients that ordered with the logistic value provided
         with the parameter logistic.
@@ -249,8 +255,6 @@ class PedApi(QObject):
             all_logs = self.get_all_logistics()
             # Start looping over the dict returned by get_all_logistics method
             for logistic, logistic_items in all_logs.items():
-
-                print(self.get_logistic_clients(logistic=logistic))
                 # logistic_items is a list of this kind
                 # [a string concatenation of logistic -- date of shipping -- client name,
                 # the corresponding channel of the logistic in question,
