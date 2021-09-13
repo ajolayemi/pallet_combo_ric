@@ -116,55 +116,45 @@ class PedApi(QObject):
         # Get pallet code name
         pallet_code_name = settings.PALLETS_BASE_INFO.get(pallet_type)[0]
 
-        # Make a copy of boxes_per_pallets_info
-        boxes_per_pallets_info_copy = boxes_per_pallets_info['result'][pallet_code_name].copy()
-
         boxes_info = boxes_per_pallets_info['result'].get(pallet_code_name)
 
         # Start looping over pallets
         for pallet_full_name, pallet_capacity in boxes_info.items():
             pallet_current_capacity = pallet_capacity
 
-            current_logistic_clients = self.get_logistic_clients(logistic=current_logistic)
+            logistic_clients = self.get_logistic_clients(logistic=current_logistic)
 
-            # Start looping over the value of current_logistic, which should be a dict
-            # where keys are client's order number and values are the total of the ratio
-            # of all what they ordered
-            if current_logistic_clients:
-                for client in current_logistic_clients:
-                    # If the total ratio of the said client is > pallet_current_capacity
-                    if round(current_logistic_clients[client]) > round(pallet_current_capacity):
-                        # Go on to the next order
-                        continue
+            # Start looping over clients
+            for client in logistic_clients:
 
-                    # Get the clients order detail
+                # If the total ratio of current client is > pallet_current_capacity
+                if logistic_clients[client] > round(pallet_current_capacity):
+                    # Go on to the next client
+                    continue
+
+                else:
+                    # Get client's order
                     client_order = self.get_client_order(client_order_num=client)
-                    # Start looping over clients order
+
                     for order in client_order:
                         product_ordered_code = order[0]
-                        if product_ordered_code in PedApi.processed_orders:
-                            continue
                         qta_ordered = int(order[2])
                         product_pallet_ratio = float(helper_functions.name_controller(
                             name=str(order[6]), char_to_remove=',',
                             new_char='.'
                         ))
+                        self.final_data.append([product_ordered_code, qta_ordered, pallet_full_name,
+                                                pallet_code_name])
 
-                        data_to_append = [product_ordered_code, qta_ordered, pallet_full_name,
-                                          pallet_code_name]
-                        self.final_data.append(data_to_append)
-
-                        # Decrease the capacity of the current pallet
-                        pallet_current_capacity -= int(round(product_pallet_ratio))
-
-                        PedApi.processed_orders.append(order)
+                        pallet_current_capacity -= product_pallet_ratio
                         self.all_orders.remove(order)
 
     def get_client_order(self, client_order_num: str):
         """ Returns a nested list of all orders pertaining to a certain client
         with client_order_num. """
-        return list(filter(lambda x: x[7] == client_order_num and x[0] not in PedApi.processed_orders,
-                           self.all_orders))
+        client_order = list(filter(lambda x: x[7] == client_order_num and x[0] not in PedApi.processed_orders,
+                                   self.all_orders))
+        return client_order
 
     def get_logistic_clients(self, logistic: str) -> dict[str, float]:
         """ Gets all clients that ordered with the logistic value provided
@@ -182,7 +172,9 @@ class PedApi(QObject):
                 clients[order_[7]] = float(current_ratio)
             else:
                 clients[order_[7]] += float(current_ratio)
-        return clients
+
+        # The returned dict is sorted from highest to lowest
+        return dict(sorted(clients.items(), key=lambda item: item[1], reverse=True))
 
     def place_boxes_on_pallets(self, current_logistic: str, boxes_per_pallets_info: dict,
                                pallet_type: str) -> None:
@@ -328,12 +320,13 @@ class PedApi(QObject):
                             boxes_per_pallets_info=boxes_per_pallets,
                             pallet_type=pallet
                         )
+                    else:
 
-                    self.place_boxes_on_pallets(
-                        current_logistic=logistic,
-                        boxes_per_pallets_info=boxes_per_pallets,
-                        pallet_type=pallet
-                    )
+                        self.place_boxes_on_pallets(
+                            current_logistic=logistic,
+                            boxes_per_pallets_info=boxes_per_pallets,
+                            pallet_type=pallet
+                        )
 
             # write the final data
             write_request_response = self.write_data_to_google_sheet()
@@ -404,6 +397,6 @@ class PedApi(QObject):
 
 if __name__ == '__main__':
     order_link = \
-        'https://docs.google.com/spreadsheets/d/13hMFE5_geDifTbeBn4fsFx5MANFSGSCVRY6eAH0SCkA/edit#gid=1330242481'
+        'https://docs.google.com/spreadsheets/d/1umjpTeSty4h6IGnaexrlNyV9b0vPWmif551E7P4hoMI/edit#gid=2110154666'
     test = PedApi(order_spreadsheet=order_link, overwrite_data=True)
     print(test.construct_pallets())

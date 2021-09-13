@@ -11,7 +11,7 @@ GOOGLE_SHEET_INITIAL_WRITING_RANGE = 'Feed Algoritmo per PED!M'
 
 ADP_CHANNEL_CODE = '(Serv-AdP)'
 
-ALV_CHANNEL_CODE = 'ALV'
+ALV_CHANNEL_CODE = '(ALV)'
 
 # Database constants
 DATABASE_NAME = 'info_pedane.sqlite'
