@@ -128,7 +128,7 @@ class PedApi(QObject):
             for client in logistic_clients:
 
                 # If the total ratio of current client is > pallet_current_capacity
-                if logistic_clients[client] > round(pallet_current_capacity):
+                if logistic_clients[client] > pallet_current_capacity:
                     # Go on to the next client
                     continue
 
