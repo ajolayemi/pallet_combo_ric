@@ -121,9 +121,44 @@ class PedApi(QObject):
 
         boxes_info = boxes_per_pallets_info['result'].get(pallet_code_name)
 
-        # Start loop
+        # Start looping over pallets
         for pallet_full_name, pallet_capacity in boxes_info.items():
             pallet_current_capacity = pallet_capacity
+
+            current_logistic_clients = self.get_logistic_clients(logistic=current_logistic)
+
+            # Start looping over the value of current_logistic, which should be a dict
+            # where keys are client's order number and values are the total of the ratio
+            # of all what they ordered
+            if current_logistic_clients:
+                for client in current_logistic_clients:
+                    # If the total ratio of the said client is > pallet_current_capacity
+                    if round(current_logistic_clients[client]) > round(pallet_current_capacity):
+                        # Go on to the next order
+                        continue
+
+                    # Get the clients order detail
+                    client_order = self.get_client_order(client_order_num=client)
+                    # Start looping over clients order
+                    for order in client_order:
+                        product_ordered_code = order[0]
+                        if product_ordered_code in PedApi.processed_orders:
+                            continue
+                        qta_ordered = int(order[2])
+                        product_pallet_ratio = float(helper_functions.name_controller(
+                            name=str(order[6]), char_to_remove=',',
+                            new_char='.'
+                        ))
+
+                        data_to_append = [product_ordered_code, qta_ordered, pallet_full_name,
+                                          pallet_code_name]
+                        self.final_data.append(data_to_append)
+
+                        # Decrease the capacity of the current pallet
+                        pallet_current_capacity -= int(round(product_pallet_ratio))
+
+                        PedApi.processed_orders.append(order)
+                        self.all_orders.remove(order)
 
     def get_client_order(self, client_order_num: str):
         """ Returns a nested list of all orders pertaining to a certain client
