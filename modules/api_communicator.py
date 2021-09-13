@@ -110,6 +110,26 @@ class PedApi(QObject):
         self.order_sheet_range_to_write = helper_functions.json_file_loader(
             file_name=settings.INFORMATION_JSON).get('order_range_sheet_for_writing')
 
+    def place_boxes_on_pallets_alv(self, current_logistic: str,
+                                   boxes_per_pallets_info: dict, pallet_type: str) -> None:
+        """ Places boxes on pallets for Alveari. """
+        # Get pallet code name
+        pallet_code_name = settings.PALLETS_BASE_INFO.get(pallet_type)[0]
+
+        # Make a copy of boxes_per_pallets_info
+        boxes_per_pallets_info_copy = boxes_per_pallets_info['result'][pallet_code_name].copy()
+
+        boxes_info = boxes_per_pallets_info['result'].get(pallet_code_name)
+
+        # Start loop
+        for pallet_full_name, pallet_capacity in boxes_info.items():
+            pallet_current_capacity = pallet_capacity
+
+    def get_logistic_clients(self, logistic: str) -> list:
+        """ Gets all clients that ordered with the logistic value provided
+        with the parameter logistic. """
+        pass
+
     def place_boxes_on_pallets(self, current_logistic: str, boxes_per_pallets_info: dict,
                                pallet_type: str) -> None:
 
@@ -141,7 +161,7 @@ class PedApi(QObject):
 
                     qta_ordered = int(current_order[2])
                     product_pallet_ratio = float(helper_functions.name_controller(
-                        name=str(current_order[-1]), char_to_remove=',',
+                        name=str(current_order[6]), char_to_remove=',',
                         new_char='.'
                     ))
 
@@ -201,8 +221,8 @@ class PedApi(QObject):
                                     self.all_orders[self.all_orders.index(current_order)][2]) - possible_product_qta
 
                                 # Modify the ratio of the current product
-                                self.all_orders[self.all_orders.index(current_order)][-1] =\
-                                    int(self.all_orders[self.all_orders.index(current_order)][-1]) - occupied_ratio
+                                self.all_orders[self.all_orders.index(current_order)][6] =\
+                                    int(self.all_orders[self.all_orders.index(current_order)][6]) - occupied_ratio
 
     def construct_pallets(self):
         """ Constructs pallets by putting boxes on them. """
