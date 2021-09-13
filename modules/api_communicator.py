@@ -125,10 +125,23 @@ class PedApi(QObject):
         for pallet_full_name, pallet_capacity in boxes_info.items():
             pallet_current_capacity = pallet_capacity
 
-    def get_logistic_clients(self, logistic: str) -> list:
+    def get_logistic_clients(self, logistic: str) -> dict[str, float]:
         """ Gets all clients that ordered with the logistic value provided
-        with the parameter logistic. """
-        pass
+        with the parameter logistic.
+        Returns a dict where keys are the clients and values are the total
+        number of boxes they ordered (the pallet ratio) """
+        current_log_orders = list(filter(lambda x: x[5] == logistic and x[0] not in PedApi.processed_orders,
+                                         self.all_orders))
+        clients = {}
+        for order_ in current_log_orders:
+            current_ratio = helper_functions.name_controller(
+                name=order_[6], char_to_remove=',', new_char='.'
+            )
+            if order_[7] not in clients:
+                clients[order_[7]] = float(current_ratio)
+            else:
+                clients[order_[7]] += float(current_ratio)
+        return clients
 
     def place_boxes_on_pallets(self, current_logistic: str, boxes_per_pallets_info: dict,
                                pallet_type: str) -> None:
@@ -237,6 +250,7 @@ class PedApi(QObject):
             # Start looping over the dict returned by get_all_logistics method
             for logistic, logistic_items in all_logs.items():
 
+                print(self.get_logistic_clients(logistic=logistic))
                 # logistic_items is a list of this kind
                 # [a string concatenation of logistic -- date of shipping -- client name,
                 # the corresponding channel of the logistic in question,
