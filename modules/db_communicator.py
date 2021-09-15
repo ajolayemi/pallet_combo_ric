@@ -5,11 +5,11 @@ information needed in this project. """
 
 
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
-from helper_modules import helper_functions
+
 
 # self defined modules
-import settings
-
+from modules import settings
+from helper_modules import helper_functions
 
 def determine_max_per_pallet(pallet_name: str, tot_pallet: int, total_boxes_ordered: int):
     if not tot_pallet:

@@ -5,10 +5,9 @@ pallets. """
 
 from collections import namedtuple
 
-from helper_modules import helper_functions
-
 # Self defined module
-import settings
+from modules import settings
+from helper_modules import helper_functions
 
 
 class Distributor:

@@ -10,9 +10,9 @@ from PyQt5.QtWidgets import (QApplication, QLabel,
 # Self defined modules
 from helper_modules import helper_functions
 
-import settings
-from api_communicator import PedApi
-from db_communicator import DatabaseCommunicator
+from modules import settings
+from modules.api_communicator import PedApi
+from modules.db_communicator import DatabaseCommunicator
 
 MSG_FONT = QFont('Italics', 13)
 BUTTONS_FONT = QFont('Times', 13)
