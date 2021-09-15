@@ -90,17 +90,21 @@ class MainPage(QMainWindow):
             self.pallet_api_cls.finished.connect(self._update_after_done)
             self.pallet_api_cls.unfinished.connect(self._update_after_done)
             self.pallet_api_cls.empty_orders.connect(self._update_after_done)
+            self.pallet_api_cls.empty_order_table.connect(self._update_after_done)
             self.pallet_api_cls.finished.connect(self._communicate_pallet_success_outcome)
             self.pallet_api_cls.unfinished.connect(self._communicate_pallet_error_outcome)
             self.pallet_api_cls.empty_orders.connect(self._communicate_pallet_error_outcome)
+            self.pallet_api_cls.empty_order_table.connect(self._communicate_pallet_error_outcome)
 
             # Do clean up
             self.pallet_api_cls.finished.connect(self.pallet_thread.quit)
             self.pallet_api_cls.unfinished.connect(self.pallet_thread.quit)
             self.pallet_api_cls.empty_orders.connect(self.pallet_thread.quit)
+            self.pallet_api_cls.empty_order_table.connect(self.pallet_thread.quit)
             self.pallet_api_cls.finished.connect(self.pallet_thread.deleteLater)
             self.pallet_api_cls.unfinished.connect(self.pallet_thread.deleteLater)
             self.pallet_api_cls.empty_orders.connect(self.pallet_thread.deleteLater)
+            self.pallet_api_cls.empty_order_table.connect(self.pallet_thread.deleteLater)
 
             # Start thread
             self.pallet_thread.start()

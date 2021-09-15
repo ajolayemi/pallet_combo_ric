@@ -27,6 +27,7 @@ class PedApi(QObject):
     finished = pyqtSignal(str)
     unfinished = pyqtSignal(str)
     empty_orders = pyqtSignal(str)
+    empty_order_table = pyqtSignal(str)
 
     processed_orders = []
 
@@ -273,9 +274,19 @@ class PedApi(QObject):
     def construct_pallets(self):
         """ Constructs pallets by putting boxes on them. """
         self.started.emit('Started constructing pallet')
+        db_reader_cls = DatabaseCommunicator()
+        check_table = DatabaseCommunicator().check_table(
+            table_name=settings.PALLET_INFO_TABLE)
+
+        # If the Pallet table is empty
+        if not check_table:
+            self.empty_order_table.emit('Bisogna che aggiorni il database!\n'
+                                        'Lo puoi fare cliccando su "Aggiornare DB"')
+
         # If there is no order
-        if not self.all_orders:
+        elif not self.all_orders:
             self.empty_orders.emit('Nessun ordine in manuale!')
+
         else:
             db_reader = DatabaseCommunicator(read_from_db=True)
             # Get all logistics and the total number of boxes each of them has

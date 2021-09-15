@@ -11,6 +11,7 @@ from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 from modules import settings
 from helper_modules import helper_functions
 
+
 def determine_max_per_pallet(pallet_name: str, tot_pallet: int, total_boxes_ordered: int):
     if not tot_pallet:
         return 0, 0
@@ -70,7 +71,7 @@ class DatabaseCommunicator:
         if not self.connection:
             self.create_connection()
         delete_query = QSqlQuery(self.connection)
-        delete_query.exec_(f'DROP TABLE Pallets')
+        delete_query.exec_(f'DROP TABLE {table_name}')
         if delete_query.isActive():
             return True
         else:
@@ -82,7 +83,7 @@ class DatabaseCommunicator:
         if not self.connection:
             self.create_connection()
         check_query = QSqlQuery(self.connection)
-        query = f'SELECT Max_Value FROM Pallets'
+        query = f'SELECT Max_Value FROM {table_name}'
         check_query.exec_(query)
         check_query.first()
         record_check = check_query.value(
@@ -269,5 +270,5 @@ class DatabaseCommunicator:
 
 
 if __name__ == '__main__':
-    pass
-
+    r = DatabaseCommunicator()
+    print(r.check_table(settings.PALLET_INFO_TABLE))
