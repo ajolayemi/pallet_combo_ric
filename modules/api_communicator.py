@@ -60,6 +60,8 @@ class PedApi(QObject):
         )
         self.pallet_info_read_range = API_INFO_JSON_CONTENTS.get('pallet_range_sheet_name')
 
+        self.pallet_dict_range = API_INFO_JSON_CONTENTS.get('pallet_dict_range')
+
         self.api_service = None
         self.sheet_api = None
 
@@ -70,9 +72,31 @@ class PedApi(QObject):
         # Saves the final data that will be written to google sheet
         self.final_data = []
 
+        # This dict stores information like last pallet number, last pallet letter
+        # and the range for writing
+        self.pallet_dict = {'last_pallet_num': 0,
+                            'last_pallet_letter': "",
+                            'order_range_sheet_for_writing': "Feed Algoritmo per PED!M2"}
+
         if for_pallets:
             self.get_all_orders()
             self.update_sheet_writing_range()
+            self.populate_pallet_dict()
+
+    def populate_pallet_dict(self):
+        """ Reads from Google sheet and updates this class attribute called pallet_dict."""
+        # If user chose not to overwrite existing data
+        if not self.overwrite_data:
+
+            pallet_dict_data = self.sheet_api.values().get(
+                spreadsheetId=self.order_spreadsheet_id,
+                range=self.pallet_dict_range).execute()
+            values_read = pallet_dict_data.get('values', [])
+            for value in values_read:
+                if len(value) > 1:
+                    self.pallet_dict.update({value[0]: value[1]})
+                else:
+                    self.pallet_dict.update({value[0]: ""})
 
     def write_data_to_google_sheet(self):
         write_request = self.api_service.spreadsheets().values().append(
@@ -410,5 +434,7 @@ class PedApi(QObject):
 if __name__ == '__main__':
     order_link = \
         'https://docs.google.com/spreadsheets/d/1umjpTeSty4h6IGnaexrlNyV9b0vPWmif551E7P4hoMI/edit#gid=2110154666'
-    test = PedApi()
+    test = PedApi(order_spreadsheet=order_link, overwrite_data=False)
+    print(test.pallet_dict)
+
 
