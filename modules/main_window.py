@@ -10,9 +10,9 @@ from PyQt5.QtWidgets import (QApplication, QLabel,
 # Self defined modules
 from helper_modules import helper_functions
 
-from modules import settings
-from modules.api_communicator import PedApi
-from modules.db_communicator import DatabaseCommunicator
+import settings
+from api_communicator import PedApi
+from db_communicator import DatabaseCommunicator
 
 MSG_FONT = QFont('Italics', 13)
 BUTTONS_FONT = QFont('Times', 13)
@@ -154,6 +154,7 @@ class MainPage(QMainWindow):
                 db_update_class = PedApi()
                 # Then update it with new data.
                 update_req = db_update_class.get_pallet_range_data()
+                print(update_req)
                 self._db_result_communicator(result=update_req)
 
         else:

@@ -8,7 +8,7 @@ from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 
 
 # self defined modules
-from modules import settings
+import settings
 from helper_modules import helper_functions
 
 
@@ -203,7 +203,7 @@ class DatabaseCommunicator:
                 self.create_connection()
             pallet_writer_query = QSqlQuery(self.connection)
             query = (
-                f"""INSERT INTO {self.pallet_table_name} (
+                f"""INSERT INTO Pallets (
                 Min_Value,
                 Max_Value,
                 Euro,
@@ -270,5 +270,6 @@ class DatabaseCommunicator:
 
 
 if __name__ == '__main__':
-    r = DatabaseCommunicator()
-    print(r.check_table(settings.PALLET_INFO_TABLE))
+    r = DatabaseCommunicator(write_to_db=True)
+    data = ['2', '4', '1', '0', '0', '1']
+    print(r.write_to_pallet_table(info_to_write=data))

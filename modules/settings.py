@@ -5,7 +5,7 @@ from helper_modules import helper_functions
 
 WINDOW_TITLE = 'PED RiC'
 INFORMATION_JSON = '../app_info_json.json'
-TO_DO_COMBO_ITEMS = ['Sì', 'No']
+TO_DO_COMBO_ITEMS = ['Sì (cancella vecchi ordini)', 'No (Aggiungi nuovi ordini)']
 GOOGLE_SHEET_WB_NAME = 'Feed Algoritmo per PED'
 GOOGLE_SHEET_INITIAL_WRITING_RANGE = 'Feed Algoritmo per PED!M'
 
@@ -23,6 +23,9 @@ WRITING_CONNECTION_NAME = f'{helper_functions.get_user_name()}_Writer'
 DATABASE_DRIVER = 'QSQLITE'
 READER_CONNECTION_NAME = f'{helper_functions.get_user_name()}_Reader'
 
+# TODO - Fare in modo che l'utente possa sovrascrivere il max
+#  sulle pedane
+
 
 # Some info and functions related to pallets -
 # these are information that remain the same for a long time
@@ -31,7 +34,7 @@ EURO_PALLET_MAX = 64  # boxes
 EURO_PALLET_MIN = 56  # boxes
 INDUSTRIAL_PALLET_LIMIT_MAX = 80  # boxes
 INDUSTRIAL_PALLET_LIMIT_MIN = 70  # boxes
-EURO_LIMIT_CHANGE_FROM = 10  # pallets
+EURO_LIMIT_CHANGE_FROM = 15  # pallets
 INDUSTRIAL_LIMIT_CHANGE_FROM = 14  # pallets
 
 PALLETS_BASE_INFO = {

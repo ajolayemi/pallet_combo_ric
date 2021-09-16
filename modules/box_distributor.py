@@ -6,7 +6,7 @@ pallets. """
 from collections import namedtuple
 
 # Self defined module
-from modules import settings
+import settings
 from helper_modules import helper_functions
 
 
