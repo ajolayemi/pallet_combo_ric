@@ -12,12 +12,11 @@ from helper_modules import helper_functions
 
 class Distributor:
 
-    def __init__(self):
-        self.all_api_contents = helper_functions.json_file_loader(
-            file_name=settings.INFORMATION_JSON
-        )
-        self.last_ped_num = self.all_api_contents.get('last_pallet_num')
-        self.last_ped_alpha = self.all_api_contents.get('last_pallet_letter')
+    def __init__(self, last_pallet_num: int,
+                 last_pallet_alpha: str):
+
+        self.last_ped_num = int(last_pallet_num) + 1
+        self.last_ped_alpha = last_pallet_alpha
 
     def box_distributor(self, pallet_type: str, tot_pallets: int,
                         boxes_per_pallets: int, tot_boxes_ordered: int,
@@ -40,18 +39,19 @@ class Distributor:
 
             # Loop over the value provided for total_pallets
             for current_pallet_num in range(1, int(tot_pallets) + 1):
-                self.last_ped_num += 1
                 # logistic_details is a list that contains the following information
                 # [client channel of order (B2C - LV, B2C - PL), date of shipping]
                 if logistic_details[0] == settings.ADP_CHANNEL_CODE:
                     self.last_ped_alpha = helper_functions.get_next_alpha(
-                        current_alpha=pallet_alphabet
+                        current_alpha=self.last_ped_alpha
                     )
                     current_pallet_name = f"PED {self.last_ped_num} " \
                                           f"{logistic_details[0]} del {logistic_details[1]} {self.last_ped_alpha}"
+                    self.last_ped_num += 1
                 else:
                     current_pallet_name = f"PED {self.last_ped_num} {logistic_details[0]} " \
                                         f"del {logistic_details[1]}"
+                    self.last_ped_num += 1
 
                 # If the current remaining boxes is less than the value of boxes_per_pallets
                 if remaining_boxes < boxes_per_pallets:
@@ -85,10 +85,8 @@ class Distributor:
                         remaining_boxes -= remaining_boxes // remaining_pallets
                         remaining_pallets -= 1
 
-            result_tuple = namedtuple('BoxDivision', ['box_division', 'remaining_boxes'])
-            helper_functions.update_json_content(
-                json_file_name=settings.INFORMATION_JSON,
-                keys_values_to_update={'last_pallet_num': self.last_ped_num,
-                                       'last_pallet_letter': self.last_ped_alpha}
-            )
             return {'result': result, 'remaining_boxes': remaining_boxes}
+
+
+if __name__ == '__main__':
+    pass
