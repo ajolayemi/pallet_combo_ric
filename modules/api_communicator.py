@@ -77,10 +77,10 @@ class PedApi(QObject):
                             'last_pallet_letter': "",
                             'order_range_sheet_for_writing': "Feed Algoritmo per PED!M2"}
 
-        if for_pallets:
-            self.get_all_orders()
-            self.update_sheet_writing_range()
-            self.populate_pallet_dict()
+        self.update_sheet_writing_range()
+        self.get_all_orders()
+
+        self.populate_pallet_dict()
 
         self.order_sheet_range_to_write = self.pallet_dict.get(
             'order_range_sheet_for_writing'
@@ -288,7 +288,7 @@ class PedApi(QObject):
         """ Constructs pallets by putting boxes on them. """
         self.started.emit('Started constructing pallet')
         db_reader_cls = DatabaseCommunicator()
-        check_table = DatabaseCommunicator().check_table(
+        check_table = db_reader_cls.check_table(
             table_name=settings.PALLET_INFO_TABLE)
 
         # If the Pallet table is empty
@@ -304,6 +304,7 @@ class PedApi(QObject):
             db_reader = DatabaseCommunicator(read_from_db=True)
             # Get all logistics and the total number of boxes each of them has
             all_logs = self.get_all_logistics()
+
             # Start looping over the dict returned by get_all_logistics method
             for logistic, logistic_items in all_logs.items():
                 # logistic_items is a list of this kind
@@ -352,6 +353,9 @@ class PedApi(QObject):
                             boxes_per_pallets_info=boxes_per_pallets,
                             pallet_type=pallet
                         )
+
+                self.pallet_dict.update({'last_pallet_num': boxes_per_pallets.get('last_box_num'),
+                                         'last_pallet_letter': boxes_per_pallets.get('last_box_alpha')})
 
             # write the final data
             write_request_response = self.write_data_to_google_sheet()
@@ -423,7 +427,5 @@ class PedApi(QObject):
 if __name__ == '__main__':
     order_link = \
         'https://docs.google.com/spreadsheets/d/1umjpTeSty4h6IGnaexrlNyV9b0vPWmif551E7P4hoMI/edit#gid=2110154666'
-    test = PedApi(order_spreadsheet=order_link, overwrite_data=False)
-    print(test.order_sheet_range_to_write)
-
-
+    test = PedApi(order_spreadsheet=order_link, overwrite_data=True, for_pallets=True)
+    test.construct_pallets()

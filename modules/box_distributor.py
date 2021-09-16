@@ -85,7 +85,8 @@ class Distributor:
                         remaining_boxes -= remaining_boxes // remaining_pallets
                         remaining_pallets -= 1
 
-            return {'result': result, 'remaining_boxes': remaining_boxes}
+            return {'result': result, 'remaining_boxes': remaining_boxes, 'last_box_num': self.last_ped_num - 1,
+                    'last_box_alpha': self.last_ped_alpha}
 
 
 if __name__ == '__main__':
