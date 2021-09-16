@@ -70,8 +70,9 @@ class PedApi(QObject):
         # Saves the final data that will be written to google sheet
         self.final_data = []
 
-        self.update_sheet_writing_range()
-        self.get_all_orders()
+        if for_pallets:
+            self.get_all_orders()
+            self.update_sheet_writing_range()
 
     def write_data_to_google_sheet(self):
         write_request = self.api_service.spreadsheets().values().append(
@@ -409,5 +410,5 @@ class PedApi(QObject):
 if __name__ == '__main__':
     order_link = \
         'https://docs.google.com/spreadsheets/d/1umjpTeSty4h6IGnaexrlNyV9b0vPWmif551E7P4hoMI/edit#gid=2110154666'
-    test = PedApi(order_spreadsheet=order_link, overwrite_data=True)
+    test = PedApi()
 
