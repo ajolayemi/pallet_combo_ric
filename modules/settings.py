@@ -48,5 +48,9 @@ POLAND_ALL_EURO = True
 POLAND_LOGISTICS = ['UPS Polska', 'Good Speed',
                     'good Speed_bancali', 'Nagel Polska']
 
+# This list stored the logistics whose max pallet value will be changed when user
+# enters a value in the GUI
+POLAND_LOGISTICS_OVERWRITE = ['UPS Polska', 'Good Speed']
+
 if __name__ == '__main__':
     pass
