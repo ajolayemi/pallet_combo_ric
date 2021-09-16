@@ -52,7 +52,6 @@ class PedApi(QObject):
         )
         self.order_sheet_range_to_read = API_INFO_JSON_CONTENTS.get('order_range_sheet_read')
         self.order_sheet_range_to_clear = API_INFO_JSON_CONTENTS.get('order_range_sheet_to_be_cleared')
-        self.order_sheet_range_to_write = None
 
         self.pallet_info_sheet_link = API_INFO_JSON_CONTENTS.get('pallet_range_sheet_link')
         self.pallet_info_sheet_id = helper_functions.get_sheet_id(
@@ -82,6 +81,10 @@ class PedApi(QObject):
             self.get_all_orders()
             self.update_sheet_writing_range()
             self.populate_pallet_dict()
+
+        self.order_sheet_range_to_write = self.pallet_dict.get(
+            'order_range_sheet_for_writing'
+        )
 
     def populate_pallet_dict(self):
         """ Reads from Google sheet and updates this class attribute called pallet_dict."""
@@ -118,23 +121,8 @@ class PedApi(QObject):
                 spreadsheetId=self.order_spreadsheet_id,
                 body={'ranges': self.order_sheet_range_to_clear}
             ).execute()
-
-            # Update writing range
-            helper_functions.update_json_content(
-                json_file_name=settings.INFORMATION_JSON,
-                keys_values_to_update={
-                    'order_range_sheet_for_writing': f'{settings.GOOGLE_SHEET_INITIAL_WRITING_RANGE}2',
-                    'last_pallet_num': 0,
-                    'last_pallet_letter': ''
-                }
-            )
         else:
             pass
-
-        # Set the value of order_sheet_range_to_write (this class attribute)
-        # to the new range
-        self.order_sheet_range_to_write = helper_functions.json_file_loader(
-            file_name=settings.INFORMATION_JSON).get('order_range_sheet_for_writing')
 
     def place_boxes_on_pallets_alv(self, current_logistic: str,
                                    boxes_per_pallets_info: dict, pallet_type: str) -> None:
@@ -336,7 +324,8 @@ class PedApi(QObject):
                     suggested_pallets = db_reader.get_pallet_info(
                         total_boxes=boxes
                     )
-                box_distributor_cls = Distributor()
+                box_distributor_cls = Distributor(last_pallet_num=self.pallet_dict.get('last_pallet_num'),
+                                                  last_pallet_alpha=self.pallet_dict.get('last_pallet_letter'))
                 for pallet in suggested_pallets:
                     boxes_per_pallets = box_distributor_cls.box_distributor(
                         pallet_type=pallet,
@@ -435,6 +424,6 @@ if __name__ == '__main__':
     order_link = \
         'https://docs.google.com/spreadsheets/d/1umjpTeSty4h6IGnaexrlNyV9b0vPWmif551E7P4hoMI/edit#gid=2110154666'
     test = PedApi(order_spreadsheet=order_link, overwrite_data=False)
-    print(test.pallet_dict)
+    print(test.order_sheet_range_to_write)
 
 
