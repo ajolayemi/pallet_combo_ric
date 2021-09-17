@@ -397,7 +397,7 @@ class PedApi(QObject):
             range=self.order_sheet_range_to_read
         ).execute()
         all_orders = order_data.get('values', [])[1:]
-        self.all_orders = sorted(all_orders, key=lambda x: (x[5], x[1], x[2]))
+        self.all_orders = sorted(all_orders, key=lambda x: (x[2], x[5], x[1]), reverse=True)
 
     def get_pallet_range_data(self):
         """ Reads from a Google Spreadsheet some data related to pallet
@@ -422,4 +422,4 @@ if __name__ == '__main__':
     order_link = \
         'https://docs.google.com/spreadsheets/d/1umjpTeSty4h6IGnaexrlNyV9b0vPWmif551E7P4hoMI/edit#gid=2110154666'
     test = PedApi(order_spreadsheet=order_link, overwrite_data=True, for_pallets=True)
-    test.construct_pallets()
+    print(test.all_orders)
