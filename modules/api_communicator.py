@@ -373,6 +373,23 @@ class PedApi(QObject):
                     body={'ranges': self.order_sheet_range_to_clear}
                 ).execute()
 
+    def get_log_varieties(self, logistic: str) -> dict:
+        """ Returns all varieties pertaining to a specific logistic
+        and their respective total boxes ratio from the order contents
+        read from Google Spreadsheet. """
+        log_varieties = list(filter(lambda x: x[5] == logistic and x[0] not in PedApi.processed_orders,
+                                    self.all_orders))
+        varieties = {}
+        for order_content in log_varieties:
+            float_ratio = float(helper_functions.name_controller(
+                name=order_content[6], new_char='.',
+                char_to_remove=','))
+            if order_content[7] not in varieties:
+                varieties[order_content[7]] = float_ratio
+            else:
+                varieties[order_content[7]][0] += float_ratio
+        return dict(sorted(varieties.items(), key=lambda x: x[1], reverse=True))
+
     def get_all_logistics(self) -> dict:
         """ Returns all logistics and there respective total boxes
         from the order contents read from Google Spreadsheet. """
@@ -422,4 +439,4 @@ if __name__ == '__main__':
     order_link = \
         'https://docs.google.com/spreadsheets/d/1umjpTeSty4h6IGnaexrlNyV9b0vPWmif551E7P4hoMI/edit#gid=2110154666'
     test = PedApi(order_spreadsheet=order_link, overwrite_data=True, for_pallets=True)
-    print(test.all_orders)
+    print(test.get_log_varieties(logistic='AU FOND DES PANS -- 13/09/2021'))
