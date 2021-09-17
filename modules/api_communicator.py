@@ -77,10 +77,10 @@ class PedApi(QObject):
                             'last_pallet_letter': "",
                             'order_range_sheet_for_writing': "Feed Algoritmo per PED!M2"}
 
-        self.update_sheet_writing_range()
-        self.get_all_orders()
-
-        self.populate_pallet_dict()
+        if self.for_pallet:
+            self.update_sheet_writing_range()
+            self.get_all_orders()
+            self.populate_pallet_dict()
 
         self.order_sheet_range_to_write = self.pallet_dict.get(
             'order_range_sheet_for_writing'
@@ -359,18 +359,12 @@ class PedApi(QObject):
 
             # write the final data
             write_request_response = self.write_data_to_google_sheet()
+            updated_range = write_request_response.get('updates').get('updatedRange')
 
             # If the data writing request was successful
-            if write_request_response:
+            if updated_range:
                 self.finished.emit('Ho finito di comporre le pedane!')
-                # Update the writing range
-                updated_range = write_request_response.get('updates').get('updatedRange')
-                last_range = int(re.search(re.compile(r'\d+'), updated_range.split(':')[-1]).group()) + 1
-                helper_functions.update_json_content(
-                    json_file_name=settings.INFORMATION_JSON,
-                    keys_values_to_update={
-                        'order_range_sheet_for_writing': f'{settings.GOOGLE_SHEET_INITIAL_WRITING_RANGE}'
-                                                         f'{last_range}'})
+
             else:
                 self.unfinished.emit("C'è stato un errore durante la composizione delle pedane")
                 # Clear any data written in google sheet
