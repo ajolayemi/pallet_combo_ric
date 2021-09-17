@@ -373,6 +373,12 @@ class PedApi(QObject):
                     body={'ranges': self.order_sheet_range_to_clear}
                 ).execute()
 
+    def get_varieties_order(self, logistic: str, variety: str):
+        variety_order = list(filter(lambda x: all((
+            x[5] == logistic, x[0] not in PedApi.processed_orders, x[7] == variety)),
+                                    self.all_orders))
+        return sorted(variety_order, key=lambda x: (x[2], x[5], x[1]), reverse=True)
+
     def get_log_varieties(self, logistic: str) -> dict:
         """ Returns all varieties pertaining to a specific logistic
         and their respective total boxes ratio from the order contents
@@ -439,4 +445,3 @@ if __name__ == '__main__':
     order_link = \
         'https://docs.google.com/spreadsheets/d/1umjpTeSty4h6IGnaexrlNyV9b0vPWmif551E7P4hoMI/edit#gid=2110154666'
     test = PedApi(order_spreadsheet=order_link, overwrite_data=True, for_pallets=True)
-    print(test.get_log_varieties(logistic='AU FOND DES PANS -- 13/09/2021'))
