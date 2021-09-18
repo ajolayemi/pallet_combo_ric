@@ -44,11 +44,15 @@ class MainPage(QMainWindow):
 
         self.google_sheet_link = None
         self.overwrite_data_in_sheet = True
+        # This controls whether user chose to enter a value for maximum
+        # boxes on pallets or not
+        self.user_want_max_boxes = False
+        self.max_boxes = 0
 
     def _connect_signals_slots(self):
         """ Connects widgets with their respective functions """
         self.g_sheet_link.textChanged.connect(self._link_label_responder)
-        self.to_do_combo.currentIndexChanged.connect(self._combo_item_getter)
+        self.to_do_combo.currentIndexChanged.connect(self._to_do_combo_item_getter)
         self.update_db_btn.clicked.connect(self._pallet_db_update)
         self.combine_pallet_btn.clicked.connect(self._pallet_combiner)
         self.close_app_btn.clicked.connect(self._close_btn_responder)
@@ -179,7 +183,7 @@ class MainPage(QMainWindow):
                 output_type=False
             )
 
-    def _combo_item_getter(self):
+    def _to_do_combo_item_getter(self):
         """ Gets ComboBox widget current item translating its value. """
         value_dict = {
             settings.TO_DO_COMBO_ITEMS[0]: True,
