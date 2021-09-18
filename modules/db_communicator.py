@@ -12,17 +12,21 @@ import settings
 from helper_modules import helper_functions
 
 
-def determine_max_per_pallet(pallet_name: str, tot_pallet: int, total_boxes_ordered: int):
+def determine_max_per_pallet(pallet_name: str, tot_pallet: int, total_boxes_ordered: int,
+                             alternative_max_min: int = 0):
     if not tot_pallet:
         return 0, 0
     else:
 
         if pallet_name == 'euro' or pallet_name == 'alternative_euro':
-            max_per_pallet = helper_functions.get_pallet_limit(
-                limit_decider_range=settings.EURO_LIMIT_CHANGE_FROM,
-                tot_pallet=tot_pallet, max_capacity=settings.EURO_PALLET_MAX,
-                min_capacity=settings.EURO_PALLET_MIN
-            )
+            if alternative_max_min > 0:
+                max_per_pallet = alternative_max_min
+            else:
+                max_per_pallet = helper_functions.get_pallet_limit(
+                    limit_decider_range=settings.EURO_LIMIT_CHANGE_FROM,
+                    tot_pallet=tot_pallet, max_capacity=settings.EURO_PALLET_MAX,
+                    min_capacity=settings.EURO_PALLET_MIN
+                )
 
         else:
             max_per_pallet = helper_functions.get_pallet_limit(
@@ -34,7 +38,7 @@ def determine_max_per_pallet(pallet_name: str, tot_pallet: int, total_boxes_orde
 
         # If the max_per_pallet value is equals the maximum capacity of a pallet
         if max_per_pallet == settings.INDUSTRIAL_PALLET_LIMIT_MAX \
-                or max_per_pallet == settings.EURO_PALLET_MAX:
+                or max_per_pallet == settings.EURO_PALLET_MAX or max_per_pallet == alternative_max_min:
             return tot_pallet, max_per_pallet
 
         # elif the total number of boxes ordered % the max capacity of a pallet == 0
@@ -95,7 +99,8 @@ class DatabaseCommunicator:
         check_query.finish()
         return record_check is not None
 
-    def get_pallet_info_pl(self, total_boxes: int):
+    def get_pallet_info_pl(self, total_boxes: int,
+                           user_max: int = 0):
         """ Returns the suggested pallet combination necessary for the
         total_boxes entered for all logistics that are for Poland """
         if not self.connection:
@@ -111,10 +116,13 @@ class DatabaseCommunicator:
             pl_euro_pallet = pl_pallet_info_query.value(
                 pl_pallet_info_query.record().indexOf('Poland_Euro')
             )
-            return {'euro': determine_max_per_pallet(
-                pallet_name='euro', tot_pallet=pl_euro_pallet,
-                total_boxes_ordered=total_boxes
-            )}
+            if user_max > 0:
+                return {'euro': determine_max_per_pallet(pallet_name='euro', tot_pallet=pl_euro_pallet,
+                                                         total_boxes_ordered=total_boxes,
+                                                         alternative_max_min=user_max)}
+
+            return {'euro': determine_max_per_pallet(pallet_name='euro', tot_pallet=pl_euro_pallet,
+                                                     total_boxes_ordered=total_boxes)}
 
     def get_pallet_info(self, total_boxes: int):
         """ Returns the suggested pallet combination necessary for the
@@ -152,9 +160,9 @@ class DatabaseCommunicator:
             # If there is a value for alternative euro
             if pallets.get('alternative_euro'):
                 return {'alternative_euro':
-                        determine_max_per_pallet(pallet_name='alternative_euro',
-                                                 tot_pallet=pallets.get('alternative_euro'),
-                                                 total_boxes_ordered=total_boxes)}
+                            determine_max_per_pallet(pallet_name='alternative_euro',
+                                                     tot_pallet=pallets.get('alternative_euro'),
+                                                     total_boxes_ordered=total_boxes)}
 
             remaining_boxes = total_boxes
             final_pallets = {}

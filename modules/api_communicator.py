@@ -32,13 +32,15 @@ class PedApi(QObject):
     processed_orders = []
 
     def __init__(self, order_spreadsheet: str = None, overwrite_data: bool = True,
-                 for_pallets: bool = False):
+                 for_pallets: bool = False, user_max_boxes: int = 0):
         super(PedApi, self).__init__()
 
         self.overwrite_data = overwrite_data
         # This is use to minimize the number of time google sheet
         # API is called to read data
         self.for_pallet = for_pallets
+
+        self.user_max_boxes = user_max_boxes
 
         self.scopes = ['https://www.googleapis.com/auth/spreadsheets']
         self.api_key_file = API_INFO_JSON_CONTENTS.get('api_key_file_name')
@@ -327,10 +329,18 @@ class PedApi(QObject):
                 boxes = math.ceil(logistic_items[0])
 
                 # Check to see if the current logistic is for Poland
-                if logistic.split('--')[0].strip() in settings.POLAND_LOGISTICS:
+                log_details = logistic.split('--')[0].strip()
+                # If user has entered a value for max_boxes in the GUI and the current
+                # logistic is one to which such rule is applied
+                if log_details in settings.POLAND_LOGISTICS_OVERWRITE \
+                        and self.user_max_boxes > 0:
                     suggested_pallets = db_reader.get_pallet_info_pl(
-                        total_boxes=boxes
+                        total_boxes=boxes, user_max=self.user_max_boxes
                     )
+
+                elif log_details in settings.POLAND_LOGISTICS:
+                    suggested_pallets = db_reader.get_pallet_info_pl(total_boxes=boxes)
+
                 else:
                     # Pass the total number of boxes each logistics has to the function that suggests
                     # pallets
@@ -339,6 +349,7 @@ class PedApi(QObject):
                     )
                 box_distributor_cls = Distributor(last_pallet_num=self.pallet_dict.get('last_pallet_num'),
                                                   last_pallet_alpha=self.pallet_dict.get('last_pallet_letter'))
+
                 for pallet in suggested_pallets:
                     boxes_per_pallets = box_distributor_cls.box_distributor(
                         pallet_type=pallet,
