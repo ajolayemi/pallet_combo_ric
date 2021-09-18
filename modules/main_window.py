@@ -183,8 +183,18 @@ class MainPage(QMainWindow):
                 output_type=False
             )
 
+    def _max_boxes_combo_item(self):
+        """ Gets max boxes ComboBox widget current item and translates
+        its value to bool value. """
+        values_dict = {
+            settings.MAX_BOXES_ITEMS[0]: False,
+            settings.MAX_BOXES_ITEMS[1]: True
+        }
+        if self.max_boxes_combo.currentText():
+            self.user_want_max_boxes = values_dict[self.max_boxes_combo.currentText()]
+
     def _to_do_combo_item_getter(self):
-        """ Gets ComboBox widget current item translating its value. """
+        """ Gets to do ComboBox widget current item translating its value. """
         value_dict = {
             settings.TO_DO_COMBO_ITEMS[0]: True,
             settings.TO_DO_COMBO_ITEMS[1]: False
