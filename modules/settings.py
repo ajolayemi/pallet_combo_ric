@@ -15,6 +15,7 @@ ADP_CHANNEL_CODE = '(Serv-AdP)'
 
 ALV_CHANNEL_CODE = '(ALV)'
 
+MIX_BOX_NAME = 'cubotto mix'
 # Database constants
 DATABASE_NAME = 'info_pedane.sqlite'
 PALLET_INFO_TABLE = 'Pallets'

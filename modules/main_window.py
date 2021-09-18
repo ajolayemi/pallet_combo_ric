@@ -76,9 +76,16 @@ class MainPage(QMainWindow):
         if ask_user == QMessageBox.Yes:
             self.pallet_thread = QThread()
 
-            self.pallet_api_cls = PedApi(order_spreadsheet=self.google_sheet_link,
-                                         for_pallets=True,
-                                         overwrite_data=self.overwrite_data_in_sheet)
+            if self.max_boxes:
+
+                self.pallet_api_cls = PedApi(order_spreadsheet=self.google_sheet_link,
+                                             for_pallets=True,
+                                             overwrite_data=self.overwrite_data_in_sheet,
+                                             user_max_boxes=self.max_boxes)
+            else:
+                self.pallet_api_cls = PedApi(order_spreadsheet=self.google_sheet_link,
+                                             for_pallets=True,
+                                             overwrite_data=self.overwrite_data_in_sheet)
 
             # Move thread
             self.pallet_api_cls.moveToThread(self.pallet_thread)
@@ -91,22 +98,28 @@ class MainPage(QMainWindow):
             # Update app's state
             self.pallet_api_cls.started.connect(self._update_while_busy)
             self.pallet_api_cls.finished.connect(self._update_after_done)
-            self.pallet_api_cls.unfinished.connect(self._update_after_done)
-            self.pallet_api_cls.empty_orders.connect(self._update_after_done)
-            self.pallet_api_cls.empty_order_table.connect(self._update_after_done)
             self.pallet_api_cls.finished.connect(self._communicate_pallet_success_outcome)
+
+            self.pallet_api_cls.unfinished.connect(self._update_after_done)
             self.pallet_api_cls.unfinished.connect(self._communicate_pallet_error_outcome)
+
+            self.pallet_api_cls.empty_orders.connect(self._update_after_done)
             self.pallet_api_cls.empty_orders.connect(self._communicate_pallet_error_outcome)
+
+            self.pallet_api_cls.empty_order_table.connect(self._update_after_done)
             self.pallet_api_cls.empty_order_table.connect(self._communicate_pallet_error_outcome)
 
             # Do clean up
             self.pallet_api_cls.finished.connect(self.pallet_thread.quit)
-            self.pallet_api_cls.unfinished.connect(self.pallet_thread.quit)
-            self.pallet_api_cls.empty_orders.connect(self.pallet_thread.quit)
-            self.pallet_api_cls.empty_order_table.connect(self.pallet_thread.quit)
             self.pallet_api_cls.finished.connect(self.pallet_thread.deleteLater)
+
+            self.pallet_api_cls.unfinished.connect(self.pallet_thread.quit)
             self.pallet_api_cls.unfinished.connect(self.pallet_thread.deleteLater)
+
+            self.pallet_api_cls.empty_orders.connect(self.pallet_thread.quit)
             self.pallet_api_cls.empty_orders.connect(self.pallet_thread.deleteLater)
+
+            self.pallet_api_cls.empty_order_table.connect(self.pallet_thread.quit)
             self.pallet_api_cls.empty_order_table.connect(self.pallet_thread.deleteLater)
 
             # Start thread
@@ -127,6 +140,7 @@ class MainPage(QMainWindow):
     def _update_after_done(self):
         """ Updates app's state when it's done combining pallets. """
         self.g_sheet_link.clear()
+        self.max_boxes_value_line_edit.clear()
         self.g_sheet_link.setEnabled(True)
         self.update_db_btn.setEnabled(True)
         self.close_app_btn.setEnabled(True)
@@ -134,6 +148,7 @@ class MainPage(QMainWindow):
     def _update_while_busy(self):
         """ Updated the GUI state while it's busy building pallets. """
         self.g_sheet_link.setEnabled(False)
+        self.max_boxes_value_line_edit.setEnabled(False)
         self.to_do_combo.setEnabled(False)
         self.update_db_btn.setEnabled(False)
         self.combine_pallet_btn.setEnabled(False)
@@ -284,7 +299,6 @@ class MainPage(QMainWindow):
 def main():
     app = QApplication(sys.argv)
     win = MainPage()
-    print(win.max_boxes)
     win.show()
     app.exec_()
 

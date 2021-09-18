@@ -417,7 +417,17 @@ class PedApi(QObject):
                 varieties[order_content[7]] = float_ratio
             else:
                 varieties[order_content[7]] += float_ratio
-        return dict(sorted(varieties.items(), key=lambda x: x[1], reverse=True))
+        sort_varieties = dict(sorted(varieties.items(), key=lambda x: x[1], reverse=True))
+
+        final_data = {}
+        # Loop over sort_varieties to check if their are MIX_BOXES
+        for product_code, value in sort_varieties.items():
+            if product_code.split('--')[0].strip() == settings.MIX_BOX_NAME:
+                final_data[product_code] = value
+
+        # At the end, add the remaining products
+        final_data.update(sort_varieties)
+        return final_data
 
     def get_all_logistics(self) -> dict:
         """ Returns all logistics and there respective total boxes
@@ -433,7 +443,9 @@ class PedApi(QObject):
             else:
                 logistics[order_content[5]][0] += float(float_num)
 
-        return logistics
+        # Sort logistics first by their channel and then by logistics
+
+        return dict(sorted(logistics.items(), key=lambda x: (x[1][1], x[0])))
 
     def get_all_orders(self):
         """ Reads from the spreadsheet that contains client orders and returns
@@ -468,4 +480,4 @@ if __name__ == '__main__':
     order_link = \
         'https://docs.google.com/spreadsheets/d/1umjpTeSty4h6IGnaexrlNyV9b0vPWmif551E7P4hoMI/edit#gid=2110154666'
     test = PedApi(order_spreadsheet=order_link, overwrite_data=True, for_pallets=True)
-    test.construct_pallets()
+    print(test.construct_pallets())
