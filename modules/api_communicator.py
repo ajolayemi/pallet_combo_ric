@@ -166,7 +166,7 @@ class PedApi(QObject):
     def get_client_order(self, client_order_num: str):
         """ Returns a nested list of all orders pertaining to a certain client
         with client_order_num. """
-        client_order = list(filter(lambda x: x[7] == client_order_num and x[0] not in PedApi.processed_orders,
+        client_order = list(filter(lambda x: x[8] == client_order_num and x[0] not in PedApi.processed_orders,
                                    self.all_orders))
         return client_order
 
@@ -182,10 +182,10 @@ class PedApi(QObject):
             current_ratio = helper_functions.name_controller(
                 name=order_[6], char_to_remove=',', new_char='.'
             )
-            if order_[7] not in clients:
-                clients[order_[7]] = float(current_ratio)
+            if order_[8] not in clients:
+                clients[order_[8]] = float(current_ratio)
             else:
-                clients[order_[7]] += float(current_ratio)
+                clients[order_[8]] += float(current_ratio)
 
         # The returned dict is sorted from highest to lowest
         return dict(sorted(clients.items(), key=lambda item: item[1], reverse=True))
