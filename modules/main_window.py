@@ -53,6 +53,7 @@ class MainPage(QMainWindow):
         """ Connects widgets with their respective functions """
         self.g_sheet_link.textChanged.connect(self._link_label_responder)
         self.to_do_combo.currentIndexChanged.connect(self._to_do_combo_item_getter)
+        self.max_boxes_combo.currentIndexChanged.connect(self._max_boxes_combo_item)
         self.update_db_btn.clicked.connect(self._pallet_db_update)
         self.combine_pallet_btn.clicked.connect(self._pallet_combiner)
         self.close_app_btn.clicked.connect(self._close_btn_responder)
