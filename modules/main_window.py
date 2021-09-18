@@ -44,16 +44,14 @@ class MainPage(QMainWindow):
 
         self.google_sheet_link = None
         self.overwrite_data_in_sheet = True
-        # This controls whether user chose to enter a value for maximum
-        # boxes on pallets or not
-        self.user_want_max_boxes = False
+
         self.max_boxes = 0
 
     def _connect_signals_slots(self):
         """ Connects widgets with their respective functions """
         self.g_sheet_link.textChanged.connect(self._link_label_responder)
         self.to_do_combo.currentIndexChanged.connect(self._to_do_combo_item_getter)
-        self.max_boxes_combo.currentIndexChanged.connect(self._max_boxes_combo_item)
+        self.max_boxes_value_line_edit.textChanged.connect(self._max_boxes_value_responder)
         self.update_db_btn.clicked.connect(self._pallet_db_update)
         self.combine_pallet_btn.clicked.connect(self._pallet_combiner)
         self.close_app_btn.clicked.connect(self._close_btn_responder)
@@ -184,15 +182,9 @@ class MainPage(QMainWindow):
                 output_type=False
             )
 
-    def _max_boxes_combo_item(self):
-        """ Gets max boxes ComboBox widget current item and translates
-        its value to bool value. """
-        values_dict = {
-            settings.MAX_BOXES_ITEMS[0]: False,
-            settings.MAX_BOXES_ITEMS[1]: True
-        }
-        if self.max_boxes_combo.currentText():
-            self.user_want_max_boxes = values_dict[self.max_boxes_combo.currentText()]
+    def _max_boxes_value_responder(self):
+        if self.max_boxes_value_line_edit.text():
+            self.max_boxes = int(self.max_boxes_value_line_edit.text())
 
     def _to_do_combo_item_getter(self):
         """ Gets to do ComboBox widget current item translating its value. """
@@ -225,10 +217,12 @@ class MainPage(QMainWindow):
             )
             if valid_link:
                 self.to_do_combo.setEnabled(True)
+                self.max_boxes_value_line_edit.setEnabled(True)
                 self.combine_pallet_btn.setEnabled(True)
                 self.google_sheet_link = self.g_sheet_link.text()
         else:
             self.to_do_combo.setEnabled(False)
+            self.max_boxes_value_line_edit.setEnabled(False)
             self.combine_pallet_btn.setEnabled(False)
 
     def _set_initial_state(self):
@@ -237,7 +231,7 @@ class MainPage(QMainWindow):
         self.to_do_combo.setCurrentIndex(0)
         self.combine_pallet_btn.setEnabled(False)
         self.to_do_combo.setEnabled(False)
-        self.max_boxes_combo.setEnabled(False)
+        self.max_boxes_value_line_edit.setEnabled(False)
 
     def _add_wids(self):
         username = helper_functions.get_user_name()
@@ -258,17 +252,12 @@ class MainPage(QMainWindow):
         self.to_do_combo_lbl.setFont(QFont('Italics', 16))
         self.to_do_combo.setFont(MSG_FONT)
 
-        self.max_boxes_lbl = QLabel('Numero max cubotti per PED')
-        self.max_boxes_lbl.setFont(QFont('Italics', 16))
-
-        self.max_boxes_combo = QComboBox()
-        self.max_boxes_combo.addItems(settings.MAX_BOXES_ITEMS)
-
-        self.max_boxes_combo.setFont(MSG_FONT)
-
-        self.max_boxes_value = QLineEdit()
-        self.max_boxes_value.setValidator(QIntValidator())
-        self.max_boxes_value.setPlaceholderText('0')
+        self.max_boxes_line_edit_lbl = QLabel('Max cubotti per PED')
+        self.max_boxes_line_edit_lbl.setFont(QFont('Italics', 16))
+        self.max_boxes_value_line_edit = QLineEdit()
+        self.max_boxes_value_line_edit.setFont(QFont('Italics', 13))
+        self.max_boxes_value_line_edit.setValidator(QIntValidator())
+        self.max_boxes_value_line_edit.setPlaceholderText('usare quello del sistema')
 
         self.update_db_btn = QPushButton('Aggiornare DB')
         self.update_db_btn.setFont(BUTTONS_FONT)
@@ -283,7 +272,7 @@ class MainPage(QMainWindow):
 
         widgets = [self.g_sheet_link_lbl, self.g_sheet_link,
                    self.to_do_combo_lbl, self.to_do_combo,
-                   self.max_boxes_lbl, self.max_boxes_combo,
+                   self.max_boxes_line_edit_lbl, self.max_boxes_value_line_edit,
                    self.combine_pallet_btn, self.update_db_btn,
                    self.close_app_btn]
 
@@ -295,6 +284,7 @@ class MainPage(QMainWindow):
 def main():
     app = QApplication(sys.argv)
     win = MainPage()
+    print(win.max_boxes)
     win.show()
     app.exec_()
 
