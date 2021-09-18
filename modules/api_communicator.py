@@ -11,9 +11,9 @@ from googleapiclient.discovery import build
 from helper_modules import helper_functions
 
 # Self defined modules
-from modules import settings
-from modules.box_distributor import Distributor
-from modules.db_communicator import DatabaseCommunicator
+import settings
+from box_distributor import Distributor
+from db_communicator import DatabaseCommunicator
 
 API_INFO_JSON_CONTENTS = helper_functions.json_file_loader(
     file_name=settings.INFORMATION_JSON
