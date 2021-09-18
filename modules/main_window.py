@@ -222,6 +222,7 @@ class MainPage(QMainWindow):
         self.to_do_combo.setCurrentIndex(0)
         self.combine_pallet_btn.setEnabled(False)
         self.to_do_combo.setEnabled(False)
+        self.max_boxes_combo.setEnabled(False)
 
     def _add_wids(self):
         username = helper_functions.get_user_name()
@@ -242,7 +243,7 @@ class MainPage(QMainWindow):
         self.to_do_combo_lbl.setFont(QFont('Italics', 16))
         self.to_do_combo.setFont(MSG_FONT)
 
-        self.max_boxes_lbl = QLabel('Numero max cubotti per PED ?')
+        self.max_boxes_lbl = QLabel('Numero max cubotti per PED')
         self.max_boxes_lbl.setFont(QFont('Italics', 16))
 
         self.max_boxes_combo = QComboBox()
