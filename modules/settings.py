@@ -25,10 +25,6 @@ WRITING_CONNECTION_NAME = f'{helper_functions.get_user_name()}_Writer'
 DATABASE_DRIVER = 'QSQLITE'
 READER_CONNECTION_NAME = f'{helper_functions.get_user_name()}_Reader'
 
-# TODO - Fare in modo che l'utente possa sovrascrivere il max
-#  sulle pedane
-
-
 # Some info and functions related to pallets -
 # these are information that remain the same for a long time
 
