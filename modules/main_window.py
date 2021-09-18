@@ -2,7 +2,7 @@
 import sys
 
 from PyQt5.QtCore import QThread
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import (QApplication, QLabel,
                              QWidget, QMainWindow, QPushButton,
                              QComboBox, QLineEdit, QGridLayout,
@@ -242,6 +242,18 @@ class MainPage(QMainWindow):
         self.to_do_combo_lbl.setFont(QFont('Italics', 16))
         self.to_do_combo.setFont(MSG_FONT)
 
+        self.max_boxes_lbl = QLabel('Numero max cubotti per PED ?')
+        self.max_boxes_lbl.setFont(QFont('Italics', 16))
+
+        self.max_boxes_combo = QComboBox()
+        self.max_boxes_combo.addItems(settings.MAX_BOXES_ITEMS)
+
+        self.max_boxes_combo.setFont(MSG_FONT)
+
+        self.max_boxes_value = QLineEdit()
+        self.max_boxes_value.setValidator(QIntValidator())
+        self.max_boxes_value.setPlaceholderText('0')
+
         self.update_db_btn = QPushButton('Aggiornare DB')
         self.update_db_btn.setFont(BUTTONS_FONT)
         self.update_db_btn.setStyleSheet('color: blue')
@@ -255,6 +267,7 @@ class MainPage(QMainWindow):
 
         widgets = [self.g_sheet_link_lbl, self.g_sheet_link,
                    self.to_do_combo_lbl, self.to_do_combo,
+                   self.max_boxes_lbl, self.max_boxes_combo,
                    self.combine_pallet_btn, self.update_db_btn,
                    self.close_app_btn]
 
