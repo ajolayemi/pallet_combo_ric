@@ -38,7 +38,7 @@ def determine_max_per_pallet(pallet_name: str, tot_pallet: int, total_boxes_orde
 
         # If the max_per_pallet value is equals the maximum capacity of a pallet
         if max_per_pallet == settings.INDUSTRIAL_PALLET_LIMIT_MAX \
-                or max_per_pallet == settings.EURO_PALLET_MAX or max_per_pallet == alternative_max_min:
+                or max_per_pallet == settings.EURO_PALLET_MAX:
             return tot_pallet, max_per_pallet
 
         # elif the total number of boxes ordered % the max capacity of a pallet == 0
@@ -238,6 +238,4 @@ class DatabaseCommunicator:
 
 
 if __name__ == '__main__':
-    r = DatabaseCommunicator(write_to_db=True)
-    data = ['2', '4', '1', '0', '0', '1']
-    print(r.write_to_pallet_table(info_to_write=data))
+    pass
