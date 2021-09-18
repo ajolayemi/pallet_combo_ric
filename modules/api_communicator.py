@@ -477,7 +477,4 @@ class PedApi(QObject):
 
 
 if __name__ == '__main__':
-    order_link = \
-        'https://docs.google.com/spreadsheets/d/1umjpTeSty4h6IGnaexrlNyV9b0vPWmif551E7P4hoMI/edit#gid=2110154666'
-    test = PedApi(order_spreadsheet=order_link, overwrite_data=True, for_pallets=True)
-    print(test.construct_pallets())
+    pass
