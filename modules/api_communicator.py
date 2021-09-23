@@ -379,6 +379,10 @@ class PedApi(QObject):
 
             # write the final data
             write_request_response = self.write_data_to_google_sheet()
+
+            # Clear the list that stores already processed orders
+            PedApi.processed_orders.clear()
+
             updated_range = write_request_response.get('updates').get('updatedRange')
 
             # If the data writing request was successful
