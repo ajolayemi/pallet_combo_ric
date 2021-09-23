@@ -97,7 +97,6 @@ class PedApi(QObject):
                 spreadsheetId=self.order_spreadsheet_id,
                 range=self.pallet_dict_range).execute()
             values_read = pallet_dict_data.get('values', [])
-            print(values_read)
             for value in values_read:
                 if len(value) > 1:
                     self.pallet_dict.update({value[0]: value[1]})
