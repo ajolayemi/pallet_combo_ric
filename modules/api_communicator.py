@@ -97,6 +97,7 @@ class PedApi(QObject):
                 spreadsheetId=self.order_spreadsheet_id,
                 range=self.pallet_dict_range).execute()
             values_read = pallet_dict_data.get('values', [])
+            print(values_read)
             for value in values_read:
                 if len(value) > 1:
                     self.pallet_dict.update({value[0]: value[1]})
@@ -259,9 +260,7 @@ class PedApi(QObject):
                             # Access the initial capacity of the current pallet
                             pallet_initial_capacity = boxes_per_pallets_info_copy.get(pallet_full_name)
 
-                            possible_product_qta = round(
-                                (round(pallet_cap) / pallet_initial_capacity) * product_pallet_ratio
-                            )
+                            possible_product_qta = round((pallet_cap / product_pallet_ratio) * qta_remaining)
 
                             # Do not put the current box on the pallet if it's possible quantity is <= 0
                             if possible_product_qta <= 0:
@@ -271,8 +270,7 @@ class PedApi(QObject):
                                 product_qta_on_pallet += possible_product_qta
                                 qta_remaining = qta_ordered - product_qta_on_pallet
 
-                                occupied_ratio = int(round((possible_product_qta / float(product_pallet_ratio))
-                                                           * pallet_initial_capacity))
+                                occupied_ratio = (product_pallet_ratio / qta_ordered) * possible_product_qta
                                 pallet_cap -= occupied_ratio
                                 self.final_data.append([product_ordered_code, possible_product_qta, pallet_full_name,
                                                         pallet_code_name])
@@ -400,7 +398,7 @@ class PedApi(QObject):
         variety_order = list(filter(lambda x: all((
             x[5] == logistic, x[0] not in PedApi.processed_orders, x[7] == variety)),
                                     self.all_orders))
-        return sorted(variety_order, key=lambda x: (x[2], x[5], x[1]), reverse=True)
+        return sorted(variety_order, key=lambda x: (x[2], x[5], x[1], x[4]), reverse=True)
 
     def get_log_varieties(self, logistic: str) -> dict:
         """ Returns all varieties pertaining to a specific logistic
@@ -445,7 +443,7 @@ class PedApi(QObject):
 
         # Sort logistics first by their channel and then by logistics
 
-        return dict(sorted(logistics.items(), key=lambda x: (x[1][1], x[0])))
+        return dict(sorted(logistics.items(), key=lambda x: (x[1][1], x[1][2], x[0])))
 
     def get_all_orders(self):
         """ Reads from the spreadsheet that contains client orders and returns
@@ -455,7 +453,7 @@ class PedApi(QObject):
             range=self.order_sheet_range_to_read
         ).execute()
         all_orders = order_data.get('values', [])[1:]
-        self.all_orders = sorted(all_orders, key=lambda x: (x[2], x[5], x[1]), reverse=True)
+        self.all_orders = sorted(all_orders, key=lambda x: (x[2], x[5], x[1], x[4]), reverse=True)
 
     def get_pallet_range_data(self):
         """ Reads from a Google Spreadsheet some data related to pallet
@@ -477,4 +475,7 @@ class PedApi(QObject):
 
 
 if __name__ == '__main__':
-    pass
+    link = "https://docs.google.com/spreadsheets/d/1WgMJ1ROEWNfzNMrAOjtJkMreAmHzjB2S88xpPbaXdxQ/edit#gid=2110154666"
+    a = PedApi(order_spreadsheet=link, overwrite_data=True, for_pallets=True)
+    print(a.get_all_logistics())
+

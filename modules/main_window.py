@@ -42,6 +42,11 @@ class MainPage(QMainWindow):
         self._set_initial_state()
         self._connect_signals_slots()
 
+        self.value_dict = {
+            settings.TO_DO_COMBO_ITEMS[0]: True,
+            settings.TO_DO_COMBO_ITEMS[1]: False
+        }
+
         self.google_sheet_link = None
         self.overwrite_data_in_sheet = True
 
@@ -75,17 +80,16 @@ class MainPage(QMainWindow):
 
         if ask_user == QMessageBox.Yes:
             self.pallet_thread = QThread()
-
             if self.max_boxes:
 
                 self.pallet_api_cls = PedApi(order_spreadsheet=self.google_sheet_link,
                                              for_pallets=True,
-                                             overwrite_data=self.overwrite_data_in_sheet,
+                                             overwrite_data=self.value_dict[self.to_do_combo.currentText()],
                                              user_max_boxes=self.max_boxes)
             else:
                 self.pallet_api_cls = PedApi(order_spreadsheet=self.google_sheet_link,
                                              for_pallets=True,
-                                             overwrite_data=self.overwrite_data_in_sheet)
+                                             overwrite_data=self.value_dict[self.to_do_combo.currentText()])
 
             # Move thread
             self.pallet_api_cls.moveToThread(self.pallet_thread)
@@ -172,7 +176,6 @@ class MainPage(QMainWindow):
                 db_update_class = PedApi()
                 # Then update it with new data.
                 update_req = db_update_class.get_pallet_range_data()
-                print(update_req)
                 self._db_result_communicator(result=update_req)
 
         else:
