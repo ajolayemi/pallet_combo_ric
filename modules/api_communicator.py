@@ -135,8 +135,8 @@ class PedApi(QObject):
         boxes_info = boxes_per_pallets_info['result'].get(pallet_code_name)
 
         # Start looping over pallets
-        for pallet_full_name, pallet_capacity in boxes_info.items():
-            pallet_current_capacity = pallet_capacity
+        for pallet_full_name, pallet_details in boxes_info.items():
+            pallet_current_capacity = pallet_details[0]
 
             logistic_clients = self.get_logistic_clients(logistic=current_logistic)
 
@@ -160,7 +160,7 @@ class PedApi(QObject):
                             new_char='.'
                         ))
                         self.final_data.append([product_ordered_code, qta_ordered, pallet_full_name,
-                                                pallet_code_name])
+                                                pallet_code_name, pallet_details[1], pallet_details[2]])
 
                         pallet_current_capacity -= product_pallet_ratio
                         self.all_orders.remove(order)
@@ -197,19 +197,14 @@ class PedApi(QObject):
 
         # Get the code name for the current pallet
         pallet_code_name = settings.PALLETS_BASE_INFO.get(pallet_type)[0]
-        print(boxes_per_pallets_info)
-
-        # Make a copy of the info related to the current pallet_code in
-        # boxes_per_pallets_info
-        boxes_per_pallets_info_copy = boxes_per_pallets_info['result'][pallet_code_name].copy()
 
         # Start looping over the boxes_per_pallets_info parameter
         # it is a named tuple containing dicts
         boxes_info = boxes_per_pallets_info['result'].get(pallet_code_name)
 
-        for pallet_full_name, pallet_current_capacity in boxes_info.items():
+        for pallet_full_name, pallet_details in boxes_info.items():
 
-            pallet_cap = pallet_current_capacity
+            pallet_cap = pallet_details[0]
             log_varieties = self.get_log_varieties(logistic=current_logistic)
             for variety in log_varieties:
                 if pallet_cap <= 0:
@@ -239,10 +234,10 @@ class PedApi(QObject):
                         if qta_remaining == 0:
                             # continue to the next product
                             continue
-                        # If the current product_pallet_ratio is <= current pallet_current_capacity
+                        # If the current product_pallet_ratio is <= current pallet_details
                         if product_pallet_ratio <= round(pallet_cap):
                             data_to_append = [product_ordered_code, qta_remaining, pallet_full_name,
-                                              pallet_code_name]
+                                              pallet_code_name, pallet_details[1], pallet_details[2]]
                             self.final_data.append(data_to_append)
 
                             # Update some values
@@ -254,11 +249,8 @@ class PedApi(QObject):
                             # Remove the current order from the list of orders
                             self.all_orders.remove(current_order)
 
-                        # Elif product_pallet_ratio > pallet_current_capacity
+                        # Elif product_pallet_ratio > pallet_details
                         elif product_pallet_ratio > round(pallet_cap):
-
-                            # Access the initial capacity of the current pallet
-                            pallet_initial_capacity = boxes_per_pallets_info_copy.get(pallet_full_name)
 
                             possible_product_qta = round((pallet_cap / product_pallet_ratio) * qta_remaining)
 
@@ -273,7 +265,7 @@ class PedApi(QObject):
                                 occupied_ratio = (product_pallet_ratio / qta_ordered) * possible_product_qta
                                 pallet_cap -= occupied_ratio
                                 self.final_data.append([product_ordered_code, possible_product_qta, pallet_full_name,
-                                                        pallet_code_name])
+                                                        pallet_code_name, pallet_details[1], pallet_details[2]])
 
                                 if qta_remaining == 0:
                                     PedApi.processed_orders.append(product_ordered_code)
