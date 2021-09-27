@@ -47,11 +47,10 @@ class Distributor:
                     )
                     current_pallet_name = f"PED {self.last_ped_num} {self.last_ped_alpha}" \
                                           f"{logistic_details[0]} del {logistic_details[1]}"
-                    self.last_ped_num += 1
+
                 else:
                     current_pallet_name = f"PED {self.last_ped_num} {logistic_details[0]} " \
                                         f"del {logistic_details[1]}"
-                    self.last_ped_num += 1
 
                 # If the current remaining boxes is less than the value of boxes_per_pallets
                 if remaining_boxes < boxes_per_pallets:
@@ -59,6 +58,7 @@ class Distributor:
                                                                      self.last_ped_num]
                     remaining_boxes -= remaining_boxes
                     remaining_pallets -= 1
+                    self.last_ped_num += 1
 
                 # If the value of boxes_per_pallets * tot_pallets <= remaining_boxes
                 # distribute the boxes in tot_pallets equally
@@ -67,6 +67,7 @@ class Distributor:
                                                                      self.last_ped_num]
                     remaining_boxes -= boxes_per_pallets
                     remaining_pallets -= 1
+                    self.last_ped_num += 1
 
                 # If the value of boxes_per_pallets * tot_pallets > tot_boxes_ordered
                 # do the following
@@ -82,12 +83,14 @@ class Distributor:
                                                                          self.last_ped_num]
                         remaining_boxes -= valid_boxes
                         remaining_pallets -= 1
+                        self.last_ped_num += 1
 
                     else:
                         result[pallet_code_name][current_pallet_name] = [remaining_boxes // remaining_pallets,
                                                                          self.last_ped_alpha, self.last_ped_num]
                         remaining_boxes -= remaining_boxes // remaining_pallets
                         remaining_pallets -= 1
+                        self.last_ped_num += 1
 
             return {'result': result, 'remaining_boxes': remaining_boxes, 'last_box_num': self.last_ped_num - 1,
                     'last_box_alpha': self.last_ped_alpha}
