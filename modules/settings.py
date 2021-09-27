@@ -18,10 +18,13 @@ ALV_CHANNEL_CODE = '(ALV)'
 MIX_BOX_NAME = 'cubotto mix'
 # Database constants
 DATABASE_NAME = 'info_pedane.sqlite'
+
 PALLET_INFO_TABLE = 'Pallets'
+KIEVIT_PALLET_TABLE = 'Kievit_Pallets'
 CLIENT_INFO_TABLE = 'Clients'
+
 MAX_PALLET_INFO = 6
-MAX_CLIENT_INFO = 2
+MAX_KIEVIT_INFO = 4
 WRITING_CONNECTION_NAME = f'{helper_functions.get_user_name()}_Writer'
 DATABASE_DRIVER = 'QSQLITE'
 READER_CONNECTION_NAME = f'{helper_functions.get_user_name()}_Reader'

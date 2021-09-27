@@ -64,6 +64,7 @@ class DatabaseCommunicator:
             self.con_name = settings.READER_CONNECTION_NAME
 
         self.pallet_table_name = settings.PALLET_INFO_TABLE
+        self.kievit_pallet_table = settings.KIEVIT_PALLET_TABLE
         self.client_table_name = settings.CLIENT_INFO_TABLE
 
         self.con_error = False
@@ -178,6 +179,34 @@ class DatabaseCommunicator:
         else:
             return {}
 
+    def write_to_kievit_pallet_table(self, info_to_write: list):
+        """ Writes the necessary information passed into info_to_write parameter
+        into kievit table in the database used in this project.
+        """
+        if len(info_to_write) == settings.MAX_KIEVIT_INFO:
+            self.create_kievit_pallet_table()
+            if not self.connection:
+                self.create_connection()
+            pallet_writer_query = QSqlQuery(self.connection)
+            query = (
+                f"""INSERT INTO {self.kievit_pallet_table} (
+                Min_Value,
+                Max_Value,
+                Euro,
+                Industrial)
+                VALUES (?, ?, ?, ?)"""
+            )
+            if pallet_writer_query.prepare(query):
+                pallet_writer_query.addBindValue(int(info_to_write[0]))
+                pallet_writer_query.addBindValue(int(info_to_write[1]))
+                pallet_writer_query.addBindValue(int(info_to_write[2]))
+                pallet_writer_query.addBindValue(int(info_to_write[3]))
+
+                pallet_writer_query.exec_()
+                return True
+            else:
+                print('query failed')
+
     def write_to_pallet_table(self, info_to_write: list):
         """ Writes the necessary information passed into info_to_write parameter
         into pallet_table in the database used in this project.
@@ -188,7 +217,7 @@ class DatabaseCommunicator:
                 self.create_connection()
             pallet_writer_query = QSqlQuery(self.connection)
             query = (
-                f"""INSERT INTO Pallets (
+                f"""INSERT INTO {self.pallet_table_name} (
                 Min_Value,
                 Max_Value,
                 Euro,
@@ -223,6 +252,23 @@ class DatabaseCommunicator:
             Industrial INTEGER,
             Alternative_Euro INTEGER,
             Poland_Euro INTEGER
+            )"""
+        )
+        pallet_query.exec_(query)
+
+    def create_kievit_pallet_table(self):
+        """ Creates the table where information related to Kievit (a special client)
+        pallets information is stored. """
+        if not self.connection:
+            self.create_connection()
+
+        pallet_query = QSqlQuery(self.connection)
+        query = (
+            f""" CREATE TABLE IF NOT EXISTS {self.kievit_pallet_table} (
+            Min_Value INTEGER,
+            Max_Value INTEGER,
+            Euro INTEGER,
+            Industrial INTEGER
             )"""
         )
         pallet_query.exec_(query)

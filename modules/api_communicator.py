@@ -55,11 +55,19 @@ class PedApi(QObject):
         self.order_sheet_range_to_read = API_INFO_JSON_CONTENTS.get('order_range_sheet_read')
         self.order_sheet_range_to_clear = API_INFO_JSON_CONTENTS.get('order_range_sheet_to_be_cleared')
 
+        # Some information related to Google Sheet where pallet ranges are stored
         self.pallet_info_sheet_link = API_INFO_JSON_CONTENTS.get('pallet_range_sheet_link')
         self.pallet_info_sheet_id = helper_functions.get_sheet_id(
             google_sheet_link=self.pallet_info_sheet_link
         )
         self.pallet_info_read_range = API_INFO_JSON_CONTENTS.get('pallet_range_sheet_name')
+
+        # Some information related to Google Sheet where pallet ranges related to Kievit are stored
+        self.kievit_sheet_link = API_INFO_JSON_CONTENTS.get('kievit_sheet_link')
+        self.kievit_sheet_id = helper_functions.get_sheet_id(
+            google_sheet_link=self.kievit_sheet_link
+        )
+        self.kievit_range_to_read = API_INFO_JSON_CONTENTS.get('kievit_sheet_range')
 
         self.pallet_dict_range = API_INFO_JSON_CONTENTS.get('pallet_dict_range')
 
@@ -210,6 +218,7 @@ class PedApi(QObject):
                 if pallet_cap <= 0:
                     break
                 log_variety_order = self.get_varieties_order(logistic=current_logistic, variety=variety)
+                print(log_variety_order)
                 if log_variety_order:
                     for current_order in log_variety_order:
 
@@ -394,7 +403,7 @@ class PedApi(QObject):
         variety_order = list(filter(lambda x: all((
             x[5] == logistic, x[0] not in PedApi.processed_orders, x[7] == variety)),
                                     self.all_orders))
-        return sorted(variety_order, key=lambda x: (x[2], x[5], x[1], x[4]), reverse=True)
+        return sorted(variety_order, key=lambda x: (x[2], x[5], x[1], x[4], x[3]), reverse=True)
 
     def get_log_varieties(self, logistic: str) -> dict:
         """ Returns all varieties pertaining to a specific logistic
@@ -451,7 +460,21 @@ class PedApi(QObject):
         all_orders = order_data.get('values', [])[1:]
         self.all_orders = sorted(all_orders, key=lambda x: (x[2], x[5], x[1], x[4]), reverse=True)
 
-    def get_pallet_range_data(self):
+    def update_kievit_pallet_table(self):
+        """ Reads from a Google Spreadsheet some data related to Kievit pallet
+        ranges and stores them in the database. """
+        db_writer_class = DatabaseCommunicator(write_to_db=True)
+        pallet_data = self.sheet_api.values().get(
+            spreadsheetId=self.kievit_sheet_id,
+            range=self.kievit_range_to_read).execute()
+        values_to_write = pallet_data.get('values', [])[1:]
+        for data in values_to_write:
+            write_result = db_writer_class.write_to_kievit_pallet_table(
+                info_to_write=data
+            )
+        return write_result is not None
+
+    def update_pallet_table(self):
         """ Reads from a Google Spreadsheet some data related to pallet
         ranges and store them in the database. """
         db_writer_class = DatabaseCommunicator(write_to_db=True)
@@ -472,6 +495,6 @@ class PedApi(QObject):
 
 if __name__ == '__main__':
     link = "https://docs.google.com/spreadsheets/d/1SVBDc3EnzIrVBacD90_t_gsN7dzW6cSuqO0l5CENJiI/edit#gid=2110154666"
-    a = PedApi(order_spreadsheet=link, overwrite_data=True, for_pallets=True)
-    a.construct_pallets()
+    a = PedApi()
+    a.update_kievit_pallet_table()
 

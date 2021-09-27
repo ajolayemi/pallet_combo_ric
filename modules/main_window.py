@@ -172,16 +172,17 @@ class MainPage(QMainWindow):
             if ask_user == QMessageBox.Yes:
                 # Drop table
                 db_class.drop_table(settings.PALLET_INFO_TABLE)
+                db_class.drop_table(settings.KIEVIT_PALLET_TABLE)
 
                 db_update_class = PedApi()
                 # Then update it with new data.
-                update_req = db_update_class.get_pallet_range_data()
+                update_req = db_update_class.update_pallet_table()
                 self._db_result_communicator(result=update_req)
 
         else:
             db_update_class = PedApi()
             # Then update it with new data.
-            update_result = db_update_class.get_pallet_range_data()
+            update_result = db_update_class.update_pallet_table()
             self._db_result_communicator(result=update_result)
 
     def _db_result_communicator(self, result: bool):
