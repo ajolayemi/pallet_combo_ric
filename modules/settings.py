@@ -45,11 +45,12 @@ PALLETS_BASE_INFO = {
 # This keeps track of whether all pallets going to Poland has to be EURO or not
 POLAND_ALL_EURO = True
 POLAND_LOGISTICS = ['UPS Polska', 'Good Speed',
-                    'good Speed_bancali', 'Nagel Polska']
+                    'good Speed_bancali', 'Nagel Polska',
+                    'DPD Polska']
 
 # This list stored the logistics whose max pallet value will be changed when user
 # enters a value in the GUI
-POLAND_LOGISTICS_OVERWRITE = ['UPS Polska', 'Good Speed']
+POLAND_LOGISTICS_OVERWRITE = ['DPD Polska', 'UPS Polska', 'Good Speed']
 
 if __name__ == '__main__':
     pass
