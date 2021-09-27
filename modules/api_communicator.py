@@ -85,7 +85,7 @@ class PedApi(QObject):
         # and the range for writing
         self.pallet_dict = {'last_pallet_num': 0,
                             'last_pallet_letter': "",
-                            'order_range_sheet_for_writing': "Feed Algoritmo per PED!N2"}
+                            'order_range_sheet_for_writing': "Feed Algoritmo per PED!O2"}
 
         if self.for_pallet:
             self.update_sheet_writing_range()
