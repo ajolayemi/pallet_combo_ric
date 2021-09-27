@@ -37,7 +37,7 @@ KIEVIT_EURO_MIN = 64  # boxes
 KIEVIT_IND_MAX = 90   # boxes
 KIEVIT_IND_MIN = 80   # boxes
 
-KIEVIT_LOG = 'Olanda Scarico Diretto'
+KIEVIT_LOGISTICS = ['Olanda Scarico Diretto']
 
 EURO_PALLET_MAX = 64  # boxes
 EURO_PALLET_MIN = 56  # boxes

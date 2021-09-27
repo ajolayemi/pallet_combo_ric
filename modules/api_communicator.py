@@ -218,7 +218,6 @@ class PedApi(QObject):
                 if pallet_cap <= 0:
                     break
                 log_variety_order = self.get_varieties_order(logistic=current_logistic, variety=variety)
-                print(log_variety_order)
                 if log_variety_order:
                     for current_order in log_variety_order:
 
@@ -339,6 +338,12 @@ class PedApi(QObject):
 
                 elif log_details in settings.POLAND_LOGISTICS:
                     suggested_pallets = db_reader.get_pallet_info_pl(total_boxes=boxes)
+
+                # Check to see maybe current logistic is for Kievit
+                elif log_details in settings.KIEVIT_LOGISTICS:
+                    suggested_pallets = db_reader.get_kievit_pallet_info(
+                        total_boxes=boxes
+                    )
 
                 else:
                     # Pass the total number of boxes each logistics has to the function that suggests
@@ -495,6 +500,5 @@ class PedApi(QObject):
 
 if __name__ == '__main__':
     link = "https://docs.google.com/spreadsheets/d/1SVBDc3EnzIrVBacD90_t_gsN7dzW6cSuqO0l5CENJiI/edit#gid=2110154666"
-    a = PedApi()
-    a.update_kievit_pallet_table()
-
+    a = PedApi(order_spreadsheet=link, for_pallets=True, overwrite_data=True)
+    a.construct_pallets()
