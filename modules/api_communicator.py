@@ -197,6 +197,7 @@ class PedApi(QObject):
 
         # Get the code name for the current pallet
         pallet_code_name = settings.PALLETS_BASE_INFO.get(pallet_type)[0]
+        print(boxes_per_pallets_info)
 
         # Make a copy of the info related to the current pallet_code in
         # boxes_per_pallets_info
@@ -478,7 +479,7 @@ class PedApi(QObject):
 
 
 if __name__ == '__main__':
-    link = "https://docs.google.com/spreadsheets/d/1WgMJ1ROEWNfzNMrAOjtJkMreAmHzjB2S88xpPbaXdxQ/edit#gid=2110154666"
+    link = "https://docs.google.com/spreadsheets/d/1SVBDc3EnzIrVBacD90_t_gsN7dzW6cSuqO0l5CENJiI/edit#gid=2110154666"
     a = PedApi(order_spreadsheet=link, overwrite_data=True, for_pallets=True)
-    print(a.get_all_logistics())
+    a.construct_pallets()
 

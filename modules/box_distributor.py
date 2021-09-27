@@ -45,8 +45,8 @@ class Distributor:
                     self.last_ped_alpha = helper_functions.get_next_alpha(
                         current_alpha=self.last_ped_alpha
                     )
-                    current_pallet_name = f"PED {self.last_ped_num} " \
-                                          f"{logistic_details[0]} del {logistic_details[1]} {self.last_ped_alpha}"
+                    current_pallet_name = f"PED {self.last_ped_num} {self.last_ped_alpha}" \
+                                          f"{logistic_details[0]} del {logistic_details[1]}"
                     self.last_ped_num += 1
                 else:
                     current_pallet_name = f"PED {self.last_ped_num} {logistic_details[0]} " \
@@ -55,14 +55,16 @@ class Distributor:
 
                 # If the current remaining boxes is less than the value of boxes_per_pallets
                 if remaining_boxes < boxes_per_pallets:
-                    result[pallet_code_name][current_pallet_name] = remaining_boxes
+                    result[pallet_code_name][current_pallet_name] = [remaining_boxes, self.last_ped_alpha,
+                                                                     self.last_ped_num]
                     remaining_boxes -= remaining_boxes
                     remaining_pallets -= 1
 
                 # If the value of boxes_per_pallets * tot_pallets <= remaining_boxes
                 # distribute the boxes in tot_pallets equally
                 elif (boxes_per_pallets * remaining_pallets) <= remaining_boxes:
-                    result[pallet_code_name][current_pallet_name] = boxes_per_pallets
+                    result[pallet_code_name][current_pallet_name] = [boxes_per_pallets, self.last_ped_alpha,
+                                                                     self.last_ped_num]
                     remaining_boxes -= boxes_per_pallets
                     remaining_pallets -= 1
 
@@ -76,12 +78,14 @@ class Distributor:
                             number=pallet_base_value, multiple_start=remaining_boxes // remaining_pallets,
                             multiple_limit=boxes_per_pallets
                         )[0]
-                        result[pallet_code_name][current_pallet_name] = valid_boxes
+                        result[pallet_code_name][current_pallet_name] = [valid_boxes, self.last_ped_alpha,
+                                                                         self.last_ped_num]
                         remaining_boxes -= valid_boxes
                         remaining_pallets -= 1
 
                     else:
-                        result[pallet_code_name][current_pallet_name] = remaining_boxes // remaining_pallets
+                        result[pallet_code_name][current_pallet_name] = [remaining_boxes // remaining_pallets,
+                                                                         self.last_ped_alpha, self.last_ped_num]
                         remaining_boxes -= remaining_boxes // remaining_pallets
                         remaining_pallets -= 1
 
