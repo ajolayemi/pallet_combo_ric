@@ -13,7 +13,7 @@ from helper_modules import helper_functions
 
 
 def determine_max_per_pallet(pallet_name: str, tot_pallet: int, total_boxes_ordered: int,
-                             alternative_max_min: int = 0):
+                             alternative_max_min: int = 0, is_kievit: bool = False):
     if not tot_pallet:
         return 0, 0
     else:
@@ -21,6 +21,13 @@ def determine_max_per_pallet(pallet_name: str, tot_pallet: int, total_boxes_orde
         if pallet_name == 'euro' or pallet_name == 'alternative_euro':
             if alternative_max_min > 0:
                 max_per_pallet = alternative_max_min
+
+            elif is_kievit:
+                max_per_pallet = helper_functions.get_pallet_limit(
+                    limit_decider_range=settings.EURO_LIMIT_CHANGE_FROM,
+                    tot_pallet=tot_pallet, max_capacity=settings.KIEVIT_EURO_MAX,
+                    min_capacity=settings.KIEVIT_EURO_MIN
+                )
             else:
                 max_per_pallet = helper_functions.get_pallet_limit(
                     limit_decider_range=settings.EURO_LIMIT_CHANGE_FROM,
@@ -29,16 +36,26 @@ def determine_max_per_pallet(pallet_name: str, tot_pallet: int, total_boxes_orde
                 )
 
         else:
-            max_per_pallet = helper_functions.get_pallet_limit(
-                limit_decider_range=settings.INDUSTRIAL_LIMIT_CHANGE_FROM,
-                min_capacity=settings.INDUSTRIAL_PALLET_LIMIT_MIN,
-                max_capacity=settings.INDUSTRIAL_PALLET_LIMIT_MAX,
-                tot_pallet=tot_pallet
-            )
+            if is_kievit:
+                max_per_pallet = helper_functions.get_pallet_limit(
+                    limit_decider_range=settings.INDUSTRIAL_LIMIT_CHANGE_FROM,
+                    min_capacity=settings.KIEVIT_IND_MIN,
+                    max_capacity=settings.KIEVIT_IND_MAX,
+                    tot_pallet=tot_pallet
+                )
+            else:
+                max_per_pallet = helper_functions.get_pallet_limit(
+                    limit_decider_range=settings.INDUSTRIAL_LIMIT_CHANGE_FROM,
+                    min_capacity=settings.INDUSTRIAL_PALLET_LIMIT_MIN,
+                    max_capacity=settings.INDUSTRIAL_PALLET_LIMIT_MAX,
+                    tot_pallet=tot_pallet
+                )
 
         # If the max_per_pallet value is equals the maximum capacity of a pallet
-        if max_per_pallet == settings.INDUSTRIAL_PALLET_LIMIT_MAX \
-                or max_per_pallet == settings.EURO_PALLET_MAX:
+        if any((max_per_pallet == settings.INDUSTRIAL_PALLET_LIMIT_MAX,
+                max_per_pallet == settings.EURO_PALLET_MAX,
+               max_per_pallet == settings.KIEVIT_EURO_MAX,
+                max_per_pallet == settings.KIEVIT_IND_MAX)):
             return tot_pallet, max_per_pallet
 
         # elif the total number of boxes ordered % the max capacity of a pallet == 0
@@ -125,6 +142,51 @@ class DatabaseCommunicator:
             return {'euro': determine_max_per_pallet(pallet_name='euro', tot_pallet=pl_euro_pallet,
                                                      total_boxes_ordered=total_boxes)}
 
+    def get_kievit_pallet_info(self, total_boxes: int):
+        """ Returns the suggested pallet combination necessary for the
+        total_boxes entered for Kievit's order. """
+        if not self.connection:
+            self.create_connection()
+
+        kievit_pallet_query = QSqlQuery(self.connection)
+        query = f'SELECT Euro, Industrial ' \
+                f'FROM {self.kievit_pallet_table} WHERE Min_Value <= {total_boxes} ' \
+                f'AND Max_Value >= {total_boxes}'
+
+        if kievit_pallet_query.prepare(query):
+
+            kievit_pallet_query.exec_()
+            kievit_pallet_query.first()
+            euro_pallet = kievit_pallet_query.value(
+                kievit_pallet_query.record().indexOf('Euro')
+            )
+
+            ind_pallet = kievit_pallet_query.value(
+                kievit_pallet_query.record().indexOf('Industrial')
+            )
+
+            if all((not euro_pallet, not ind_pallet)):
+                return {}
+
+            pallets = {
+                'euro': euro_pallet,
+                'industrial': ind_pallet,
+            }
+            remaining_boxes = total_boxes
+            final_pallets = {}
+            for pallet in pallets:
+                if not pallets[pallet]:
+                    continue
+                else:
+                    final_pallets[pallet] = determine_max_per_pallet(pallet_name=pallet, tot_pallet=pallets[pallet],
+                                                                     total_boxes_ordered=remaining_boxes,
+                                                                     is_kievit=True)
+                    remaining_boxes -= final_pallets[pallet][0] * final_pallets[pallet][1]
+
+            return final_pallets
+        else:
+            return {}
+
     def get_pallet_info(self, total_boxes: int):
         """ Returns the suggested pallet combination necessary for the
         total_boxes entered for all logistics that aren't for Poland. """
@@ -161,9 +223,9 @@ class DatabaseCommunicator:
             # If there is a value for alternative euro
             if pallets.get('alternative_euro'):
                 return {'alternative_euro':
-                            determine_max_per_pallet(pallet_name='alternative_euro',
-                                                     tot_pallet=pallets.get('alternative_euro'),
-                                                     total_boxes_ordered=total_boxes)}
+                        determine_max_per_pallet(pallet_name='alternative_euro',
+                                                 tot_pallet=pallets.get('alternative_euro'),
+                                                 total_boxes_ordered=total_boxes)}
 
             remaining_boxes = total_boxes
             final_pallets = {}
