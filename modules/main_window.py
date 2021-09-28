@@ -177,8 +177,11 @@ class MainPage(QMainWindow):
                 db_update_class = PedApi()
                 # Then update it with new data.
                 update_req = db_update_class.update_pallet_table()
-                self._db_result_communicator(result=update_req)
-
+                update_kievit_req = db_update_class.update_kievit_pallet_table()
+                if all((update_kievit_req, update_req)):
+                    self._db_result_communicator(result=update_req)
+                else:
+                    self._db_result_communicator(result=False)
         else:
             db_update_class = PedApi()
             # Then update it with new data.
