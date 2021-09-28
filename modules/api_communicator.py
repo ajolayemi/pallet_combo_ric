@@ -597,6 +597,4 @@ class PedApi(QObject):
 
 
 if __name__ == '__main__':
-    link = "https://docs.google.com/spreadsheets/d/1SVBDc3EnzIrVBacD90_t_gsN7dzW6cSuqO0l5CENJiI/edit#gid=2110154666"
-    a = PedApi(order_spreadsheet=link, for_pallets=True, overwrite_data=True)
-    a.construct_pallets()
+    pass
