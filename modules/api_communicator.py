@@ -134,6 +134,88 @@ class PedApi(QObject):
         else:
             pass
 
+    def place_boxes_on_pallets_corb(self, corbari_logistic: str,
+                                    boxes_per_pallets_info: dict, pallet_type: str) -> None:
+
+        pallet_code_name = settings.PALLETS_BASE_INFO.get(pallet_type)[0]
+
+        boxes_info = boxes_per_pallets_info['result'].get(pallet_code_name)
+
+        for pallet_full_name, pallet_details in boxes_info.items():
+            pallet_cap = pallet_details[0]
+
+            corb_orders = self.get_corbari_orders(corbari_logistic=corbari_logistic)
+            if corb_orders:
+                for current_corb_order in corb_orders:
+
+                    if pallet_cap <= 0:
+                        break
+
+                    product_ordered_code = current_corb_order[0]
+
+                    if product_ordered_code in PedApi.processed_orders:
+                        continue
+                    qta_ordered = int(current_corb_order[2])
+                    product_pallet_ratio = float(helper_functions.name_controller(
+                        name=str(current_corb_order[6]), char_to_remove=',',
+                        new_char='.'
+                    ))
+
+                    qta_on_pallet = 0
+                    qta_remaining = int(qta_ordered - qta_on_pallet)
+
+                    if qta_remaining == 0:
+                        continue
+                    elif product_pallet_ratio <= round(pallet_cap):
+                        self.final_data.append([product_ordered_code, qta_remaining, pallet_full_name,
+                                                pallet_code_name, pallet_details[1], pallet_details[2]])
+
+                        # Update some values
+                        qta_on_pallet += qta_remaining
+                        qta_remaining = int(qta_ordered - qta_on_pallet)
+                        pallet_cap -= product_pallet_ratio
+
+                        PedApi.processed_orders.append(product_ordered_code)
+                        self.all_orders.remove(current_corb_order)
+                    elif product_pallet_ratio > round(pallet_cap):
+
+                        possible_product_qta = round((pallet_cap / product_pallet_ratio) * qta_remaining)
+
+                        if possible_product_qta <= 0:
+                            continue
+                        else:
+                            qta_on_pallet += possible_product_qta
+                            qta_remaining = int(qta_ordered - qta_on_pallet)
+
+                            ratio_occupied = (product_pallet_ratio / qta_ordered) * possible_product_qta
+                            pallet_cap -= ratio_occupied
+                            self.final_data.append([product_ordered_code, possible_product_qta, pallet_full_name,
+                                                    pallet_code_name, pallet_details[1], pallet_details[2]])
+
+                            if qta_remaining == 0:
+                                PedApi.processed_orders.append(product_ordered_code)
+                                self.all_orders.remove(current_corb_order)
+                            else:
+                                product_qta_in_all_orders = float(
+                                    helper_functions.name_controller(
+                                        name=self.all_orders[self.all_orders.index(current_corb_order)][2],
+                                        char_to_remove=',', new_char='.'
+                                    )
+                                )
+
+                                # Modify the quantity of the current product
+                                self.all_orders[self.all_orders.index(current_corb_order)][2] = \
+                                    str(int(product_qta_in_all_orders - possible_product_qta))
+
+                                product_ratio_in_all_orders = float(helper_functions.name_controller(
+                                    name=self.all_orders[self.all_orders.index(current_corb_order)][6],
+                                    char_to_remove=',', new_char='.'
+                                ))
+
+                                # Modify the ratio of the current product
+                                self.all_orders[self.all_orders.index(current_corb_order)][6] = \
+                                    str(int(product_ratio_in_all_orders - ratio_occupied))
+
     def place_boxes_on_pallets_alv(self, current_logistic: str,
                                    boxes_per_pallets_info: dict, pallet_type: str) -> None:
         """ Places boxes on pallets for Alveari. """
@@ -303,8 +385,6 @@ class PedApi(QObject):
                 # Check to see if the current logistic is for Poland
                 log_details = logistic.split('--')[0].strip()
 
-                if log_details in settings.CORBARI_LOGISTICS:
-                    print(self.get_corbari_orders(corbari_logistic=logistic))
                 # If user has entered a value for max_boxes in the GUI and the current
                 # logistic is one to which such rule is applied
                 if log_details in settings.POLAND_LOGISTICS_OVERWRITE \
@@ -350,6 +430,14 @@ class PedApi(QObject):
                             boxes_per_pallets_info=boxes_per_pallets,
                             pallet_type=pallet
                         )
+
+                    elif log_details in settings.CORBARI_LOGISTICS:
+                        self.place_boxes_on_pallets_corb(
+                            corbari_logistic=logistic,
+                            boxes_per_pallets_info=boxes_per_pallets,
+                            pallet_type=pallet
+                        )
+
                     else:
 
                         self.place_boxes_on_pallets(

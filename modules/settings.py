@@ -32,7 +32,7 @@ READER_CONNECTION_NAME = f'{helper_functions.get_user_name()}_Reader'
 # Some info and functions related to pallets -
 # these are information that remain the same for a long time
 
-KIEVIT_EURO_MAX = 72  # boxes
+KIEVIT_EURO_MAX = 73  # boxes
 KIEVIT_EURO_MIN = 64  # boxes
 KIEVIT_IND_MAX = 90   # boxes
 KIEVIT_IND_MIN = 80   # boxes
