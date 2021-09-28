@@ -39,6 +39,8 @@ KIEVIT_IND_MIN = 80   # boxes
 
 KIEVIT_LOGISTICS = ['Olanda Scarico Diretto']
 
+CORBARI_LOGISTICS = ['G.A.L.A. SERVICE S.R.L.']
+
 EURO_PALLET_MAX = 64  # boxes
 EURO_PALLET_MIN = 56  # boxes
 INDUSTRIAL_PALLET_LIMIT_MAX = 80  # boxes

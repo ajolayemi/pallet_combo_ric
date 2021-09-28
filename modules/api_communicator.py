@@ -319,6 +319,7 @@ class PedApi(QObject):
 
             # Start looping over the dict returned by get_all_logistics method
             for logistic, logistic_items in all_logs.items():
+
                 # logistic_items is a list of this kind
                 # [a string concatenation of logistic -- date of shipping -- client name,
                 # the corresponding channel of the logistic in question,
@@ -328,6 +329,9 @@ class PedApi(QObject):
 
                 # Check to see if the current logistic is for Poland
                 log_details = logistic.split('--')[0].strip()
+
+                if log_details in settings.CORBARI_LOGISTICS:
+                    print(self.get_corbari_orders(corbari_logistic=logistic))
                 # If user has entered a value for max_boxes in the GUI and the current
                 # logistic is one to which such rule is applied
                 if log_details in settings.POLAND_LOGISTICS_OVERWRITE \
@@ -409,6 +413,12 @@ class PedApi(QObject):
             x[5] == logistic, x[0] not in PedApi.processed_orders, x[7] == variety)),
                                     self.all_orders))
         return sorted(variety_order, key=lambda x: (x[2], x[5], x[1], x[4], x[3]), reverse=True)
+
+    def get_corbari_orders(self, corbari_logistic: str) -> list[list]:
+        """ Gets all orders pertaining to the entered corbari_logistic"""
+        log_orders = list(filter(lambda x: x[5] == corbari_logistic and x[0] not in PedApi.processed_orders,
+                                 self.all_orders))
+        return sorted(log_orders, key=lambda x: x[9], reverse=True)
 
     def get_log_varieties(self, logistic: str) -> dict:
         """ Returns all varieties pertaining to a specific logistic
