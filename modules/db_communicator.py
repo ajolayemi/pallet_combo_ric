@@ -183,7 +183,7 @@ class DatabaseCommunicator:
                                                                      is_kievit=True)
                     remaining_boxes -= final_pallets[pallet][0] * final_pallets[pallet][1]
 
-            return final_pallets
+            return dict(sorted(final_pallets.items(), key=lambda x: x[1][0] * x[1][1], reverse=True))
         else:
             return {}
 
@@ -266,8 +266,6 @@ class DatabaseCommunicator:
 
                 pallet_writer_query.exec_()
                 return True
-            else:
-                print('query failed')
 
     def write_to_pallet_table(self, info_to_write: list):
         """ Writes the necessary information passed into info_to_write parameter
