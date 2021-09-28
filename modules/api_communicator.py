@@ -173,33 +173,6 @@ class PedApi(QObject):
                         pallet_current_capacity -= product_pallet_ratio
                         self.all_orders.remove(order)
 
-    def get_client_order(self, client_order_num: str):
-        """ Returns a nested list of all orders pertaining to a certain client
-        with client_order_num. """
-        client_order = list(filter(lambda x: x[8] == client_order_num and x[0] not in PedApi.processed_orders,
-                                   self.all_orders))
-        return client_order
-
-    def get_logistic_clients(self, logistic: str) -> dict[str, float]:
-        """ Gets all clients that ordered with the logistic value provided
-        with the parameter logistic.
-        Returns a dict where keys are the clients and values are the total
-        number of boxes they ordered (the pallet ratio) """
-        current_log_orders = list(filter(lambda x: x[5] == logistic and x[0] not in PedApi.processed_orders,
-                                         self.all_orders))
-        clients = {}
-        for order_ in current_log_orders:
-            current_ratio = helper_functions.name_controller(
-                name=order_[6], char_to_remove=',', new_char='.'
-            )
-            if order_[8] not in clients:
-                clients[order_[8]] = float(current_ratio)
-            else:
-                clients[order_[8]] += float(current_ratio)
-
-        # The returned dict is sorted from highest to lowest
-        return dict(sorted(clients.items(), key=lambda item: item[1], reverse=True))
-
     def place_boxes_on_pallets(self, current_logistic: str, boxes_per_pallets_info: dict,
                                pallet_type: str) -> None:
 
@@ -407,6 +380,33 @@ class PedApi(QObject):
                     spreadsheetId=self.order_spreadsheet_id,
                     body={'ranges': self.order_sheet_range_to_clear}
                 ).execute()
+
+    def get_client_order(self, client_order_num: str):
+        """ Returns a nested list of all orders pertaining to a certain client
+        with client_order_num. """
+        client_order = list(filter(lambda x: x[8] == client_order_num and x[0] not in PedApi.processed_orders,
+                                   self.all_orders))
+        return client_order
+
+    def get_logistic_clients(self, logistic: str) -> dict[str, float]:
+        """ Gets all clients that ordered with the logistic value provided
+        with the parameter logistic.
+        Returns a dict where keys are the clients and values are the total
+        number of boxes they ordered (the pallet ratio) """
+        current_log_orders = list(filter(lambda x: x[5] == logistic and x[0] not in PedApi.processed_orders,
+                                         self.all_orders))
+        clients = {}
+        for order_ in current_log_orders:
+            current_ratio = helper_functions.name_controller(
+                name=order_[6], char_to_remove=',', new_char='.'
+            )
+            if order_[8] not in clients:
+                clients[order_[8]] = float(current_ratio)
+            else:
+                clients[order_[8]] += float(current_ratio)
+
+        # The returned dict is sorted from highest to lowest
+        return dict(sorted(clients.items(), key=lambda item: item[1], reverse=True))
 
     def get_varieties_order(self, logistic: str, variety: str):
         variety_order = list(filter(lambda x: all((
