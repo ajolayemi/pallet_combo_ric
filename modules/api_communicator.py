@@ -408,10 +408,16 @@ class PedApi(QObject):
                     suggested_pallets = db_reader.get_pallet_info(
                         total_boxes=boxes
                     )
-                box_distributor_cls = Distributor(last_pallet_num=self.pallet_dict.get('last_pallet_num'),
-                                                  last_pallet_alpha=self.pallet_dict.get('last_pallet_letter'))
+
+                if logistic_items[1] == settings.ADP_CHANNEL_CODE:
+                    box_distributor_cls = Distributor(last_pallet_num=self.pallet_dict.get('last_pallet_num'),
+                                                      last_pallet_alpha=self.pallet_dict.get('last_pallet_letter'))
+                else:
+                    box_distributor_cls = Distributor(last_pallet_num=self.pallet_dict.get('last_pallet_num'),
+                                                      last_pallet_alpha='')
 
                 for pallet in suggested_pallets:
+
                     boxes_per_pallets = box_distributor_cls.box_distributor(
                         pallet_type=pallet,
                         boxes_per_pallets=suggested_pallets[pallet][1],
