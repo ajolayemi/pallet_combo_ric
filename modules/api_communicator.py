@@ -3,7 +3,6 @@
 """ Communicates with google sheets using Google Sheet API both reading and writing data to
 the sheets. """
 import math
-import re
 
 from PyQt5.QtCore import pyqtSignal, QObject
 from google.oauth2 import service_account
@@ -379,7 +378,6 @@ class PedApi(QObject):
                 # [a string concatenation of logistic -- date of shipping -- client name,
                 # the corresponding channel of the logistic in question,
                 # the total num of boxes the logistic has]
-
                 boxes = math.ceil(logistic_items[0])
 
                 # Check to see if the current logistic is for Poland
