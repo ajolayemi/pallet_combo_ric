@@ -549,9 +549,9 @@ class PedApi(QObject):
             else:
                 logistics[order_content[5]][0] += float(float_num)
 
-        # Sort logistics first by their channel and then by logistics
-
-        return dict(sorted(logistics.items(), key=lambda x: (x[1][1], x[1][2], x[0])))
+        # Sort logistics first by their shipping date and then by the name of their channel
+        # This is to prevent the algorithm from processing orders of the same channel at different interval
+        return dict(sorted(logistics.items(), key=lambda x: (x[1][2], x[1][1])))
 
     def get_all_orders(self):
         """ Reads from the spreadsheet that contains client orders and returns
