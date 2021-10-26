@@ -8,6 +8,8 @@ from PyQt5.QtCore import pyqtSignal, QObject
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from helper_modules import helper_functions
+from googleapiclient import errors
+from google.auth import exceptions
 
 # Self defined modules
 import settings
@@ -20,6 +22,7 @@ API_INFO_JSON_CONTENTS = helper_functions.json_file_loader(
 
 
 class PedApi(QObject):
+    """ The class used for communicating with google sheets using Sheet API."""
 
     # Custom sigs
     started = pyqtSignal(str)
@@ -27,6 +30,9 @@ class PedApi(QObject):
     unfinished = pyqtSignal(str)
     empty_orders = pyqtSignal(str)
     empty_order_table = pyqtSignal(str)
+
+    http_error = pyqtSignal(str)
+    internet_error = pyqtSignal(str)
 
     processed_orders = []
 
@@ -85,6 +91,9 @@ class PedApi(QObject):
         self.pallet_dict = {'last_pallet_num': 0,
                             'last_pallet_letter': "",
                             'order_range_sheet_for_writing': "Feed Algoritmo per PED!O2"}
+
+        # Check to see that everything is okay with Google Sheet API
+        self.check_api_status()
 
         if self.for_pallet:
             self.update_sheet_writing_range()
@@ -598,6 +607,17 @@ class PedApi(QObject):
     def _create_pallet_api_service(self):
         self.api_service = build('sheets', 'v4', credentials=self.api_creds)
         self.sheet_api = self.api_service.spreadsheets()
+
+    def _check_api_status(self):
+        """ Checks to see if user has shared the google sheet with this API
+        and if there is any other error. """
+        try:
+            self.api_service.spreadsheets().get(
+                spreadsheetId=self.order_spreadsheet_id).execute()
+        except errors.HttpError as http_error:
+            self.http_error.emit(http_error.error_details)
+        except exceptions.TransportError:
+            self.internet_error.emit('Internet non disponibile')
 
 
 if __name__ == '__main__':
