@@ -92,10 +92,13 @@ class PedApi(QObject):
                             'last_pallet_letter': "",
                             'order_range_sheet_for_writing': "Feed Algoritmo per PED!O2"}
 
-        # Check to see that everything is okay with Google Sheet API
-        self.check_api_status()
+        self.can_proceed = True
 
-        if self.for_pallet:
+        # Check to see that everything is okay with Google Sheet API
+        self._check_api_status()
+
+        if self.for_pallet and self.can_proceed:
+            print('Not going')
             self.update_sheet_writing_range()
             self.get_all_orders()
             self.populate_pallet_dict()
@@ -361,66 +364,67 @@ class PedApi(QObject):
 
     def construct_pallets(self):
         """ Constructs pallets by putting boxes on them. """
-        self.started.emit('Started constructing pallet')
-        db_reader_cls = DatabaseCommunicator()
-        check_table = db_reader_cls.check_table(
-            table_name=settings.PALLET_INFO_TABLE)
+        if self.can_proceed:
+            self.started.emit('Started constructing pallet')
+            db_reader_cls = DatabaseCommunicator()
+            check_table = db_reader_cls.check_table(
+                table_name=settings.PALLET_INFO_TABLE)
 
-        # If the Pallet table is empty
-        if not check_table:
-            self.empty_order_table.emit('Bisogna che aggiorni il database!\n'
+            # If the Pallet table is empty
+            if not check_table:
+                self.empty_order_table.emit('Bisogna che aggiorni il database!\n'
                                         'Lo puoi fare cliccando su "Aggiornare DB"')
 
-        # If there is no order
-        elif not self.all_orders:
-            self.empty_orders.emit('Nessun ordine in manuale!')
+            # If there is no order
+            elif not self.all_orders and self.can_proceed:
+                self.empty_orders.emit('Nessun ordine in manuale!')
 
-        else:
-            db_reader = DatabaseCommunicator(read_from_db=True)
-            # Get all logistics and the total number of boxes each of them has
-            all_logs = self.get_all_logistics()
+            else:
+                db_reader = DatabaseCommunicator(read_from_db=True)
+                # Get all logistics and the total number of boxes each of them has
+                all_logs = self.get_all_logistics()
 
-            # Start looping over the dict returned by get_all_logistics method
-            for logistic, logistic_items in all_logs.items():
+                # Start looping over the dict returned by get_all_logistics method
+                for logistic, logistic_items in all_logs.items():
 
-                # logistic_items is a list of this kind
-                # [a string concatenation of logistic -- date of shipping -- client name,
-                # the corresponding channel of the logistic in question,
-                # the total num of boxes the logistic has]
-                boxes = math.ceil(logistic_items[0])
+                    # logistic_items is a list of this kind
+                    # [a string concatenation of logistic -- date of shipping -- client name,
+                    # the corresponding channel of the logistic in question,
+                    # the total num of boxes the logistic has]
+                    boxes = math.ceil(logistic_items[0])
 
-                # Check to see if the current logistic is for Poland
-                log_details = logistic.split('--')[0].strip()
+                    # Check to see if the current logistic is for Poland
+                    log_details = logistic.split('--')[0].strip()
 
-                # If user has entered a value for max_boxes in the GUI and the current
-                # logistic is one to which such rule is applied
-                if log_details in settings.POLAND_LOGISTICS_OVERWRITE \
-                        and self.user_max_boxes > 0:
-                    suggested_pallets = db_reader.get_pallet_info_pl(
-                        total_boxes=boxes, user_max=self.user_max_boxes
-                    )
+                    # If user has entered a value for max_boxes in the GUI and the current
+                    # logistic is one to which such rule is applied
+                    if log_details in settings.POLAND_LOGISTICS_OVERWRITE \
+                            and self.user_max_boxes > 0:
+                        suggested_pallets = db_reader.get_pallet_info_pl(
+                            total_boxes=boxes, user_max=self.user_max_boxes
+                        )
 
-                elif log_details in settings.POLAND_LOGISTICS:
-                    suggested_pallets = db_reader.get_pallet_info_pl(total_boxes=boxes)
+                    elif log_details in settings.POLAND_LOGISTICS:
+                        suggested_pallets = db_reader.get_pallet_info_pl(total_boxes=boxes)
 
-                # Check to see maybe current logistic is for Kievit
-                elif log_details in settings.KIEVIT_LOGISTICS:
-                    suggested_pallets = db_reader.get_kievit_pallet_info(
-                        total_boxes=boxes
-                    )
+                    # Check to see maybe current logistic is for Kievit
+                    elif log_details in settings.KIEVIT_LOGISTICS:
+                        suggested_pallets = db_reader.get_kievit_pallet_info(
+                            total_boxes=boxes
+                        )
 
-                else:
-                    # Pass the total number of boxes each logistics has to the function that suggests
-                    # pallets
-                    suggested_pallets = db_reader.get_pallet_info(
-                        total_boxes=boxes
-                    )
+                    else:
+                        # Pass the total number of boxes each logistics has to the function that suggests
+                        # pallets
+                        suggested_pallets = db_reader.get_pallet_info(
+                            total_boxes=boxes
+                        )
 
-                if logistic_items[1] == settings.ADP_CHANNEL_CODE:
-                    box_distributor_cls = Distributor(last_pallet_num=self.pallet_dict.get('last_pallet_num'),
-                                                      last_pallet_alpha=self.pallet_dict.get('last_pallet_letter'))
-                else:
-                    box_distributor_cls = Distributor(last_pallet_num=self.pallet_dict.get('last_pallet_num'),
+                    if logistic_items[1] == settings.ADP_CHANNEL_CODE:
+                        box_distributor_cls = Distributor(last_pallet_num=self.pallet_dict.get('last_pallet_num'),
+                                                          last_pallet_alpha=self.pallet_dict.get('last_pallet_letter'))
+                    else:
+                        box_distributor_cls = Distributor(last_pallet_num=self.pallet_dict.get('last_pallet_num'),
                                                       last_pallet_alpha='')
 
                 for pallet in suggested_pallets:
@@ -615,8 +619,11 @@ class PedApi(QObject):
             self.api_service.spreadsheets().get(
                 spreadsheetId=self.order_spreadsheet_id).execute()
         except errors.HttpError as http_error:
+            self.can_proceed = False
             self.http_error.emit(http_error.error_details)
+            print('http')
         except exceptions.TransportError:
+            self.can_proceed = False
             self.internet_error.emit('Internet non disponibile')
 
 

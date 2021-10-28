@@ -101,6 +101,10 @@ class MainPage(QMainWindow):
 
             # Update app's state
             self.pallet_api_cls.started.connect(self._update_while_busy)
+
+            self.pallet_api_cls.http_error.connect(self._update_after_done)
+            self.pallet_api_cls.http_error.connect(self._communicate_pallet_error_outcome)
+
             self.pallet_api_cls.finished.connect(self._update_after_done)
             self.pallet_api_cls.finished.connect(self._communicate_pallet_success_outcome)
 
@@ -114,6 +118,9 @@ class MainPage(QMainWindow):
             self.pallet_api_cls.empty_order_table.connect(self._communicate_pallet_error_outcome)
 
             # Do clean up
+            self.pallet_api_cls.http_error.connect(self.pallet_thread.quit)
+            self.pallet_api_cls.http_error.connect(self.pallet_thread.deleteLater)
+
             self.pallet_api_cls.finished.connect(self.pallet_thread.quit)
             self.pallet_api_cls.finished.connect(self.pallet_thread.deleteLater)
 
