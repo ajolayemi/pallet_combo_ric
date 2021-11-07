@@ -9,7 +9,6 @@ TO_DO_COMBO_ITEMS = ['Sì (cancella vecchi ordini)', 'No (Aggiungi nuovi ordini)
 MAX_BOXES_ITEMS = ['Usare quello del sistema',
                    'Impostare numero max cubotti']
 GOOGLE_SHEET_WB_NAME = 'Feed Algoritmo per PED'
-GOOGLE_SHEET_INITIAL_WRITING_RANGE = 'Feed Algoritmo per PED!M'
 
 ADP_CHANNEL_CODE = '(Serv-AdP)'
 
