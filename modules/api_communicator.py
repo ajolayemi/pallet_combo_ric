@@ -84,7 +84,7 @@ class PedApi(QObject):
         # and the range for writing
         self.pallet_dict = {'last_pallet_num': 0,
                             'last_pallet_letter': "",
-                            'order_range_sheet_for_writing': "Feed Algoritmo per PED!O2"}
+                            'order_range_sheet_for_writing': "Feed Algoritmo per PED!Q2"}
 
         if self.for_pallet:
             self.update_sheet_writing_range()
@@ -598,13 +598,15 @@ class PedApi(QObject):
                 name=order_content[6], new_char='.',
                 char_to_remove=',')
             if order_content[5] not in logistics:
-                logistics[order_content[5]] = [float(float_num), order_content[3].strip(), order_content[4]]
+                logistics[order_content[5]] = [float(float_num), order_content[3].strip(), order_content[4],
+                                               order_content[10]]
             else:
                 logistics[order_content[5]][0] += float(float_num)
 
-        # Sort logistics first by their shipping date and then by the name of their channel
+        # Sort logistics first by their shipping date, then by the name of their channel and lastly by
+        # The position of the alphabet given to them
         # This is to prevent the algorithm from processing orders of the same channel at different interval
-        return dict(sorted(logistics.items(), key=lambda x: (x[1][2], x[1][1])))
+        return dict(sorted(logistics.items(), key=lambda x: (x[1][2], x[1][1], int(x[1][3]))))
 
     def get_all_orders(self):
         """ Reads from the spreadsheet that contains client orders and returns
