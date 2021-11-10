@@ -350,6 +350,22 @@ class PedApi(QObject):
                                     self.all_orders[self.all_orders.index(current_order)][6] = \
                                         str(int(product_ratio_in_all_orders - occupied_ratio))
 
+    def place_boxes_on_pallets_adp(self, adp_logistic: str, pallet_type: str,
+                                   pallet_number: str, pallet_alpha: str,
+                                   pallet_full_name: str) -> None:
+        """ Places boxes on pallets pertaining to Albero del Paradiso. """
+        # Get orders pertaining to the current adp_logistic
+
+        # Since ADP construct it's pallets already, add the returned order directly to
+        # the list of final data to be written
+        current_adp_orders = self.get_adp_log_orders(adp_logistic=adp_logistic)
+        for order in current_adp_orders:
+            data_to_append = [order[0], int(order[2]), pallet_full_name, pallet_type,
+                              pallet_alpha, pallet_number]
+            self.final_data.append(data_to_append)
+            self.all_orders.remove(order)
+            PedApi.processed_orders.append(order)
+
     def construct_pallets(self):
         """ Constructs pallets by putting boxes on them. """
         self.started.emit('Started constructing pallet')
@@ -383,6 +399,38 @@ class PedApi(QObject):
                 # Check to see if the current logistic is for Poland
                 log_details = logistic.split('--')[0].strip()
 
+                # If the current logistic is for ADP
+                if logistic_items[1] == settings.ADP_CHANNEL_CODE:
+                    split_logistic = logistic.split(' -- ')
+                    # Get the suggested pallet alpha
+                    suggested_pallet_alpha = split_logistic[3].strip()
+                    suggested_pallet_type = split_logistic[2].strip()
+                    # Get the suggested pallet type
+
+                    # Get the number of pallet
+                    last_pallet_num = self.pallet_dict.get('last_pallet_num')
+
+                    # Call upon the method that returns a valid pallet name
+                    adp_distributor_cls = Distributor(last_pallet_num=last_pallet_num,
+                                                      last_pallet_alpha=suggested_pallet_alpha)
+
+                    adp_log_details = [logistic_items[1], logistic_items[2]]
+
+                    # The function called below returns a tuple where the first item is the
+                    # pallet full name and the other item is the pallet's number
+                    pallet_full_name, pallet_number = adp_distributor_cls.distribute_adp_boxes(
+                        logistic_details=adp_log_details
+                    )
+                    # Call upon the function that places adp boxes on it's pallet passing in the
+                    # necessary parameters
+                    self.place_boxes_on_pallets_adp(
+                        adp_logistic=logistic, pallet_type=suggested_pallet_type,
+                        pallet_number=pallet_number, pallet_alpha=suggested_pallet_alpha,
+                        pallet_full_name=pallet_full_name
+                    )
+                    # Update pallet_dict
+                    # self.pallet_dict.update({'last_pallet_num': last_pallet_num + 1})
+
                 # If user has entered a value for max_boxes in the GUI and the current
                 # logistic is one to which such rule is applied
                 if log_details in settings.POLAND_LOGISTICS_OVERWRITE \
@@ -407,12 +455,8 @@ class PedApi(QObject):
                         total_boxes=boxes
                     )
 
-                if logistic_items[1] == settings.ADP_CHANNEL_CODE:
-                    box_distributor_cls = Distributor(last_pallet_num=self.pallet_dict.get('last_pallet_num'),
-                                                      last_pallet_alpha=self.pallet_dict.get('last_pallet_letter'))
-                else:
-                    box_distributor_cls = Distributor(last_pallet_num=self.pallet_dict.get('last_pallet_num'),
-                                                      last_pallet_alpha='')
+                box_distributor_cls = Distributor(last_pallet_num=self.pallet_dict.get('last_pallet_num'),
+                                                  last_pallet_alpha='')
 
                 for pallet in suggested_pallets:
 
@@ -472,6 +516,11 @@ class PedApi(QObject):
                     spreadsheetId=self.order_spreadsheet_id,
                     body={'ranges': self.order_sheet_range_to_clear}
                 ).execute()
+
+    def get_adp_log_orders(self, adp_logistic: str):
+        """ Returns a nested list of all orders pertaining to the current adp_logistic. """
+        return list(filter(lambda x: x[5] == adp_logistic and x[0] not in PedApi.processed_orders,
+                           self.all_orders))
 
     def get_client_order(self, client_order_num: str):
         """ Returns a nested list of all orders pertaining to a certain client

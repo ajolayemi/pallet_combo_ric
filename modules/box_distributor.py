@@ -18,6 +18,13 @@ class Distributor:
         self.last_ped_num = int(last_pallet_num) + 1
         self.last_ped_alpha = last_pallet_alpha
 
+    def distribute_adp_boxes(self, logistic_details: list):
+        """ Returns the appropriate pallet name for ADP """
+        if logistic_details[0] == settings.ADP_CHANNEL_CODE:
+            current_pallet_name = f"PED {self.last_ped_num} {self.last_ped_alpha} " \
+                                  f"{logistic_details[0]} del {logistic_details[1]}"
+            return current_pallet_name, self.last_ped_num
+
     def box_distributor(self, pallet_type: str, tot_pallets: int,
                         boxes_per_pallets: int, tot_boxes_ordered: int,
                         logistic_details: list) -> dict:
