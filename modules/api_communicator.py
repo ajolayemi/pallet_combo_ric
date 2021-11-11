@@ -428,12 +428,16 @@ class PedApi(QObject):
                         pallet_number=pallet_number, pallet_alpha=suggested_pallet_alpha,
                         pallet_full_name=pallet_full_name
                     )
+
                     # Update pallet_dict
-                    # self.pallet_dict.update({'last_pallet_num': last_pallet_num + 1})
+                    self.pallet_dict.update({'last_pallet_num': last_pallet_num + 1})
+
+                    # Go on to the next logistic
+                    continue
 
                 # If user has entered a value for max_boxes in the GUI and the current
                 # logistic is one to which such rule is applied
-                if log_details in settings.POLAND_LOGISTICS_OVERWRITE \
+                elif log_details in settings.POLAND_LOGISTICS_OVERWRITE \
                         and self.user_max_boxes > 0:
                     suggested_pallets = db_reader.get_pallet_info_pl(
                         total_boxes=boxes, user_max=self.user_max_boxes
