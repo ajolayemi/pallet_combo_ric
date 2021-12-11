@@ -360,6 +360,7 @@ class PedApi(QObject):
         # the list of final data to be written
         current_adp_orders = self.get_adp_log_orders(adp_logistic=adp_logistic)
         for order in current_adp_orders:
+
             data_to_append = [order[0], int(order[2]), pallet_full_name, pallet_type,
                               pallet_alpha, pallet_number]
             self.final_data.append(data_to_append)
@@ -389,7 +390,6 @@ class PedApi(QObject):
 
             # Start looping over the dict returned by get_all_logistics method
             for logistic, logistic_items in all_logs.items():
-
                 # logistic_items is a list of this kind
                 # [a string concatenation of logistic -- date of shipping -- client name,
                 # the corresponding channel of the logistic in question,
@@ -430,7 +430,7 @@ class PedApi(QObject):
                     )
 
                     # Update pallet_dict
-                    self.pallet_dict.update({'last_pallet_num': last_pallet_num + 1})
+                    self.pallet_dict.update({'last_pallet_num': int(last_pallet_num) + 1})
 
                     # Go on to the next logistic
                     continue
@@ -607,10 +607,11 @@ class PedApi(QObject):
             else:
                 logistics[order_content[5]][0] += float(float_num)
 
-        # Sort logistics first by their shipping date, then by the name of their channel and lastly by
-        # The position of the alphabet given to them
+        # Sort logistics first by their shipping date, then by the position of the alphabet given to them
+        # then by the name of their logistic
+        # and lastly by their channel
         # This is to prevent the algorithm from processing orders of the same channel at different interval
-        return dict(sorted(logistics.items(), key=lambda x: (x[1][2], x[1][1], int(x[1][3]))))
+        return dict(sorted(logistics.items(), key=lambda x: (x[1][2], int(x[1][3]), x[0].split(' -- ')[0], x[1][1])))
 
     def get_all_orders(self):
         """ Reads from the spreadsheet that contains client orders and returns
